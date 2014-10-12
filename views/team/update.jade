@@ -1,0 +1,295 @@
+extends ../layouts/layout
+
+block head
+  title #{application} &middot; Update Team
+
+block content
+  .container
+    .row
+      .col-sm-6.col-sm-offset-3
+        br
+        br
+        form(action='/team/update', method='POST')
+          input(type='hidden', name='_csrf', value=_csrf)
+          input(type='hidden', name='teamId', id='teamId')
+          legend Update Team
+          .form-group
+            label(for='name') Name:
+            input.form-control(type='text', name='name', id='name', placeholder='Team Name', autofocus=true, required)
+          .form-group
+            label(for='date_established') Date Established:
+            input.form-control(type='date', name='date_established', id='date_established', required)
+          .form-group
+            button.btn.btn-success(type='submit', id='submitForm')
+              i.fa.fa-check
+              | &nbsp;Update Team
+            | &nbsp;
+        
+        hr
+        
+        h2
+          i.fa.fa-users
+          | &nbsp; Current Users
+          //- Create Account Button
+          a.linkadduser.btn.btn-primary(href='#', role='button', style='float:right') Add Users
+        //- Wrapper
+        #wrapper
+
+          //- USER LIST
+          #userList
+            table.table.table-striped
+              thead
+                th Name
+                th.hidden-xs Email
+                th.hidden-xs Date Established
+                th Last Active
+                th Remove?
+              tbody
+          //- /USER LIST
+        //- Wrapper
+
+  #removeUserModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title Delete confirmation
+          .modal-body
+            h4 Are you sure?
+            input.form-control(type='hidden', name='user-id', id='user_id', required)
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesRemoveUser.btn.btn-primary(type='button') Yes!
+
+  #addUserModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title Add Users to Team
+          .modal-body
+            h4 Users
+            input.form-control(type='hidden', name='user-id', id='user_id', required)
+            //- ADD USER LIST
+            #addUserList
+              table.table.table-striped
+                thead
+                  th Add?
+                  th Name
+                  th Current Team
+                tbody
+          //- /ADDUSER LIST
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesAddUser.btn.btn-primary(type='button') Yes!
+
+  //- HTML 5 Form Notes
+  //- ===========================================
+  //- 1) Always add labels!
+  //-    Screen readers will have trouble with your forms if you don't include a label for every input.
+  //-    NOTE: you can hide the labels using the .sr-only class.
+  //- 2) Use proper HTML5 input types (email, password, date, url, etc.)  This adds some HTML5 validation as
+  //-    well as the correct keyboard on mobile devices.
+  //- 3) When using the pattern attribute, the ^ and $ for the start and end of the regular expression
+  //-    are implied and don't need to be included.
+  //- 4) You can help the user by including a title attribute that tells them the format you require.
+
+block scripts
+  //script(src='../../lib/underscore/underscore-min.js', type='text/javascript')
+  script.
+    // Team data  for filling in tables
+    var teamData;
+
+    // Team id
+    var teamId;
+    
+    // DOM Ready =============================================================
+    $(document).ready(function() {
+      //- Async Load Bootstrap Modal
+      $.ajax({
+        type: 'GET',
+        url: '../lib/bootstrap/js/modal.js',
+        dataType: 'script',
+        cache: true
+      });
+
+      //- Async Load moment.js
+      $.ajax({
+        type: 'GET',
+        url: '../lib/moment/min/moment.min.js',
+        dataType: 'script',
+        cache: true
+      }).done(function(script, textStatus) {
+        // Now populate form
+        populateForm();
+      });
+
+      $('#userList table tbody').on('click', 'td a.linkremoveuser', showRemoveUserModal);
+      $('#yesRemoveUser').on('click', removeUser);
+      $('a.linkadduser').on('click', showAddUserModal);
+      $('#yesAddUser').on('click', addUser);
+    });
+    
+    // Functions =============================================================
+    // Fill form with data
+    function populateForm() {
+
+      
+      teamId = window.location.href.split('?')[1];
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/teamlist/' + teamId, function( data ) {
+
+        // Stick our user data array into a userlist variable in the global object
+        teamData = data;
+
+        // Add fields to form
+        $('#teamId').val(data._id);
+        $('#name').val(data.name);
+        $('#date_established').val(moment(data.date_established).format('MMMM Do YYYY'));
+
+        // Popultate Current Users table
+        populateUsersTable();
+      });
+
+    };
+
+    // Fill users table with data
+    function populateUsersTable() {
+
+      // Empty content string
+      var tableContent = '';
+
+      // For each item in our JSON, add a table row and cells to the content string
+      $.each(teamData.users, function(){
+        tableContent += '<tr>';
+        tableContent += '<td><a href="#" class="linkshowuser btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.profile.name + '</td>';
+        tableContent += '<td class="hidden-xs"><a href="mailto:' + this.email + '">' + this.email + '</a></td>';
+        tableContent += '<td class="hidden-xs">' + moment(this.activity.date_established).format('MMMM Do YYYY') + '</td>';
+        tableContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+        tableContent += '<td><a href="#" class="linkremoveuser btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+      });
+
+      // Inject the whole content string into our existing HTML table
+      $('#userList table tbody').html(tableContent);
+    }
+
+    // Show Remove User Modal
+    function showRemoveUserModal(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Pop up a confirmation dialog
+      $('#removeUserModal').modal({keyboard:true,backdrop:'static'});
+
+      // Set User Id to hidden field
+      // so we pass the user's id through
+      $('#user_id').val($(this).attr('rel'));
+
+    };
+
+    // Remove User
+    function removeUser(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+      
+      // do our delete
+      $.ajax({
+        type: 'DELETE',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{user_id: $('#user_id').val(), team_id:teamId},
+        url: '/teamdeleteuser'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // jQuery AJAX call for JSON
+        $.getJSON( '/teamlist/' + teamId, function( data ) {
+          // Update our global team data object
+          teamData = data
+          // Update the table
+          populateUsersTable();
+        });
+      });
+      // close the modal
+      $('#removeUserModal').modal('hide');
+
+    };
+
+    // Show Add User Modal
+    function showAddUserModal(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Pop up a confirmation dialog
+      $('#addUserModal').modal({keyboard:true,backdrop:'static'});
+
+      // Empty content string
+      var tableContent = '';
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/accountlist', function( data ) {
+        // For each item in our JSON, add a table row and cells to the content string
+        $.each(data, function(){
+          if($.inArray(teamId,  this.teams) == -1) {
+            tableContent += '<tr>';
+            tableContent += '<td><div id="users"><input type="checkbox" name="users" value="' + this._id + '"></div></td>';
+            tableContent += '<td>' + this.profile.name + '</td>';
+            tableContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+          }
+        });
+
+      // Inject the whole content string into our existing HTML table
+      $('#addUserList table tbody').html(tableContent);
+
+      });
+    };
+
+    // Add User
+    function addUser(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+      
+      // Get the users that are checked from modal
+      // and add them to usersId array to pass into post
+      var serializedArray = $("#users input:checked").serializeArray();
+      var usersIdsArray = [];
+
+      for (var i = 0, length = serializedArray.length; i < length; i++) {
+        usersIdsArray.push(serializedArray[i]['value']);
+      }
+      
+      // do our update
+      $.ajax({
+        type: 'POST',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{users:usersIdsArray, team_id:teamId},
+        url: '/teamaddusers'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // jQuery AJAX call for JSON
+        $.getJSON( '/teamlist/' + teamId, function( data ) {
+          // Update our global team data object
+          teamData = data
+          // Update the table
+          populateUsersTable();
+        });
+      });
+      // close the modal
+      $('#addUserModal').modal('hide');
+
+    };

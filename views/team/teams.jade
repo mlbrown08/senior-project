@@ -1,0 +1,205 @@
+extends ../layouts/layout
+//- http://cwbuecheler.com/web/tutorials/2014/restful-web-app-node-express-mongodb/
+
+block head
+  title #{application} &middot; Teams
+
+block content
+  .container
+    .row
+      .col-md-4.col-md-push-8
+        .page-header
+          h2
+            i.fa.fa-user
+            | &nbsp;Team Details
+        //- TEAM INFO
+        #teamInfo.well
+          p
+            strong Name:
+            |  <span id='teamInfoName'></span>
+          p
+            strong Date Established:
+            |  <span id='teamInfoEstablished'></span>
+          p.hidden-xs
+            strong Users:
+            |  <span id='teamInfoUsers'></span>
+          p.hidden-xs
+            strong Projects:
+            |  <span id='teamInfoProjects'></span>
+        //- /TEAM INFO
+      .col-md-8.col-md-pull-4
+        .page-header
+          h2
+            i.fa.fa-users
+            | &nbsp;#{application} Teams
+        //- CREATE TEAM
+        a.btn.btn-primary(href='/team/create', role='button') Create Team
+        //- Wrapper
+        #wrapper
+
+          //- TEAM LIST
+          #teamList
+            table.table.table-striped
+              thead
+                th Name
+                th.hidden-xs Number of Users
+                th.hidden-xs Number of Projects
+                th.hidden-xs Date Established
+                th Update
+                th Delete?
+              tbody
+          //- /TEAM LIST
+
+        //- /WRAPPER
+
+
+  #myModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title Delete confirmation
+          .modal-body
+            h4 Are you sure?
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yes.btn.btn-primary(type='button') Yes!
+
+  //- script(src='lib/moment/min/moment.min.js')
+  //- script(src='lib/bootstrap/js/modal.js')
+block scripts
+  script.
+    // Teamlist data array for filling in info box
+    var teamListData = [];
+
+    // DOM Ready =============================================================
+    $(document).ready(function() {
+
+      //- Async Load Bootstrap Modal
+      $.ajax({
+        type: 'GET',
+        url: 'lib/bootstrap/js/modal.js',
+        dataType: 'script',
+        cache: true
+      });
+
+      //- Async Load moment.js
+      $.ajax({
+        type: 'GET',
+        url: 'lib/moment/min/moment.min.js',
+        dataType: 'script',
+        cache: true
+      }).done(function(script, textStatus) {
+        // Now populate the team table
+        populateTable();
+      });
+
+      // Team Name link click
+      $('#teamList table tbody').on('click', 'td a.linkshowteam', showTeamInfo);
+
+      // Delete Team link click
+      $('#teamList table tbody').on('click', 'td a.linkdeleteteam', deleteTeam);
+
+    });
+
+    // Functions =============================================================
+
+    // Fill table with data
+    function populateTable() {
+
+      // Empty content string
+      var tableContent = '';
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/teamlist', function( data ) {
+
+        // Stick our user data array into a userlist variable in the global object
+        teamListData = data;
+
+        // For each item in our JSON, add a table row and cells to the content string
+        $.each(data, function(){
+          tableContent += '<tr>';
+          tableContent += '<td><a href="#" class="linkshowteam btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.name + '</td>';
+          tableContent += '<td class="hidden-xs">' + this.users.length + '</td>';
+          tableContent += '<td class="hidden-xs">' + this.projects.length + '</td>';
+          tableContent += '<td class="hidden-xs">' + moment(this.date_established).format('MMMM Do YYYY') + '</td>';
+          tableContent += '<td><a href="team/update?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
+          tableContent += '<td><a href="#" class="linkdeleteteam btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+        });
+
+        // Inject the whole content string into our existing HTML table
+        $('#teamList table tbody').html(tableContent);
+      });
+
+    };
+
+    // Show Yeam Info
+    function showTeamInfo(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Retrieve username from link rel attribute
+      var thisTeamName = $(this).attr('rel');
+
+      // Get Index of object based on id value
+      var arrayPosition = teamListData.map(function(arrayItem) { return arrayItem._id; }).indexOf(thisTeamName);
+
+      // Get our User Object
+      var thisTeamObject = teamListData[arrayPosition];
+
+      //Populate Info Box
+      $('#teamInfoName').text(thisTeamObject.name);
+      $('#teamInfoEstablished').text(moment(thisTeamObject.date_established).format('MMMM Do YYYY'));
+      
+      // Populate Users
+      var userContent = '<ul>';
+      $.each(thisTeamObject.users, function(){
+        userContent += '<li>' + this.profile.name + '</li>';
+      });
+
+      // Inject the whole content string into our existing HTML table
+      $('#teamInfoUsers').html(userContent);
+
+      // TODO - Populate Projects
+    };
+
+    // Delete User
+    function deleteTeam(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Pop up a confirmation dialog
+      // Convoluted because we have to
+      // pass the user's id through
+      function showmodal(teamid) {
+        // show modal
+        $('#myModal').modal({keyboard:true,backdrop:'static'});
+        // if "yes" clicked
+        $('#yes').on('click', function () {
+          // do our delete
+          $.ajax({
+            type: 'DELETE',
+            //- headers: { 'X-CSRF-Token': '#{token}' },
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/teamlist/' + teamid
+          }).done(function( response ) {
+            // Check for a successful (blank) response
+            if (response.msg === '') {
+            }
+            else {
+              alert('Error: ' + response.msg);
+            }
+            // Update the table
+            populateTable();
+          });
+          // close the modal
+          $('#myModal').modal('hide');
+        });
+      }
+
+      // call modal function with the user's account id
+      showmodal($(this).attr('rel'));
+
+    };
