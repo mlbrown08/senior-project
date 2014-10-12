@@ -81,6 +81,20 @@ nav.navbar.navbar-default.navbar-fixed-top(role='navigation')
                 a(href='/api/twitter')
                   i.fa.fa-fw.fa-lock
                   | &nbsp;Twitter
+          //- Visible to Admin users only!
+          if user.type == 'admin'
+            li
+              a(href='/demo')
+                i.fa.fa-fw.fa-laptop
+                | &nbsp;Demo
+            li
+              a(href='/teams')
+                i.fa.fa-fw.fa-users
+                | &nbsp;Teams
+            li
+              a(href='/accounts')
+                i.fa.fa-fw.fa-users
+                | &nbsp;Accounts
 
         //- Right side
         ul.nav.navbar-nav.navbar-right
