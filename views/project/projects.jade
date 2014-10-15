@@ -1,0 +1,244 @@
+extends ../layouts/layout
+
+block head
+  title #{application} &middot; Pojects
+
+block content
+  .container
+    .row
+      .col-md-4.col-md-push-8
+        .page-header
+          h2
+            i.fa.fa-user
+            | &nbsp;Project Details
+        //- PROJECT INFO
+        #projectInfo.well
+          p
+            strong Name:
+            |  <span id='projectInfoName'></span>
+          p
+            strong Date Established:
+            |  <span id='projectInfoEstablished'></span>
+          p.hidden-xs
+            strong Teams:
+            |  <span id='projectInfoTeams'></span>
+          p.hidden-xs
+            strong Users:
+            |  <span id='projectInfoUsers'></span>
+          p.hidden-xs
+            strong Docker Options:
+            |  <span id='projectInfoDocker'></span>
+        //- /PROJECT INFO
+      .col-md-8.col-md-pull-4
+        .page-header
+          h2
+            i.fa.fa-laptop
+            | &nbsp;#{application} Projects
+        //- CREATE PROJECT
+        a.btn.btn-primary(href='/project/create', role='button') Create Project
+        //- WRAPPER
+        #wrapper
+
+          //- PROJECT LIST
+          #projectList
+            table.table.table-striped
+              thead
+                th Name
+                th.hidden-xs Number of Teams
+                th.hidden-xs Number of Users
+                th.hidden-xs Date Established
+                th Update
+                th Delete?
+              tbody
+          //- /PROJECT LIST
+
+        //- /WRAPPER
+
+
+  #deleteProjectModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title Delete confirmation
+          .modal-body
+            h4 Are you sure?
+            input.form-control(type='hidden', name='project_id', id='project_id', required)
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesDeleteProject.btn.btn-primary(type='button') Yes!
+
+block scripts
+  script.
+    // Projectlist data array for filling in info box
+    var projectListData = [];
+
+    // DOM Ready =============================================================
+    $(document).ready(function() {
+
+      //- Async Load Bootstrap Modal
+      $.ajax({
+        type: 'GET',
+        url: 'lib/bootstrap/js/modal.js',
+        dataType: 'script',
+        cache: true
+      });
+
+      //- Async Load moment.js
+      $.ajax({
+        type: 'GET',
+        url: 'lib/moment/min/moment.min.js',
+        dataType: 'script',
+        cache: true
+      }).done(function(script, textStatus) {
+        // Now populate the project table
+        populateTable();
+      });
+
+      // Project Name link click
+      $('#projectList table tbody').on('click', 'td a.linkshowproject', showProjectInfo);
+
+      // Delete Project link click
+      $('#projectList table tbody').on('click', 'td a.linkdeleteproject', showDeleteProjectModal);
+      $('#yesDeleteProject').on('click',  deleteProject);
+
+    });
+
+    // Functions =============================================================
+
+    // Fill table with data
+    function populateTable() {
+
+      // Empty content string
+      var tableContent = '';
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/projectlist', function( data ) {
+
+        // Stick our user data array into a userlist variable in the global object
+        projectListData = data;
+
+        // For each item in our JSON, add a table row and cells to the content string
+        $.each(data, function(){
+          tableContent += '<tr>';
+          tableContent += '<td><a href="#" class="linkshowproject btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.name + '</td>';
+          tableContent += '<td class="hidden-xs">' + this.teams.length + '</td>';
+          // Number of Users working on Project
+          var userCount = 0;
+          $.each(this.teams, function() {
+            userCount += this.users.length;
+          });
+          tableContent += '<td class="hidden-xs">' + userCount + '</td>';
+          tableContent += '<td class="hidden-xs">' + moment(this.date_established).format('MMMM Do YYYY') + '</td>';
+          tableContent += '<td><a href="project/update?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
+          tableContent += '<td><a href="#" class="linkdeleteproject btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+        });
+
+        // Inject the whole content string into our existing HTML table
+        $('#projectList table tbody').html(tableContent);
+      });
+
+    };
+
+    // Show Project Info
+    function showProjectInfo(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Retrieve username from link rel attribute
+      var thisProjectName = $(this).attr('rel');
+
+      // Get Index of object based on id value
+      var arrayPosition = projectListData.map(function(arrayItem) { return arrayItem._id; }).indexOf(thisProjectName);
+
+      // Get our User Object
+      var thisProjectObject = projectListData[arrayPosition];
+
+      //Populate Info Box
+      $('#projectInfoName').text(thisProjectObject.name);
+      $('#projectInfoEstablished').text(moment(thisProjectObject.date_established).format('MMMM Do YYYY'));
+      
+      // Populate Teams
+      var teamContent = '<ul>';
+      $.each(thisProjectObject.teams, function(){
+        teamContent += '<li>' + this.name + '</li>';
+      });
+
+      // Inject the whole Team content string into our info box
+      $('#projectInfoTeams').html(teamContent);
+
+      // Populate Users
+      var userContent = '<ul>';
+      $.each(thisProjectObject.teams, function(){
+        $.each(this.users, function(){
+          $.ajax({
+            async: false,
+            url: '/accountlist/' + this,
+            dataType: 'json',
+            success: function(data) {
+              userContent += '<li>' + data.profile.name + '</li>';
+            }
+          });
+        });
+      });
+
+      // Inject the whole User content string into our info box
+      $('#projectInfoUsers').html(userContent);
+
+      // Populate Docker Info
+      var dockerContent = '<ul>';
+      dockerContent += '<li><b>Image:</b> ' + thisProjectObject.docker_opts.image + '</li>';
+      dockerContent += '<li><b>CMD:</b> ' + thisProjectObject.docker_opts.cmd + '</li>';
+      if (thisProjectObject.docker_opts.host_port != '') {
+        dockerContent += '<li><b>Host Port:</b> ' + thisProjectObject.docker_opts.host_port + '</li>';
+      }
+      if (thisProjectObject.docker_opts.container_port != '') {
+        dockerContent += '<li><b>Container Port:</b> ' + thisProjectObject.docker_opts.container_port + '</li>';
+      }
+
+      // Inject the whole Docker content string into our info box
+      $('#projectInfoDocker').html(dockerContent);
+    };
+
+    // Show Delete Project Modal
+    function showDeleteProjectModal(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+       // show modal
+       $('#deleteProjectModal').modal({keyboard:true,backdrop:'static'});
+
+      // Set Project Id to hidden field
+      // so we pass the Project's Id through
+      $('#project_id').val($(this).attr('rel'));
+
+    };
+
+    // Delete User
+    function deleteProject(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // do our delete
+      $.ajax({
+        type: 'DELETE',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/projectlist/' + $('#project_id').val()
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // Update the table
+        populateTable();
+      });
+      // close the modal
+      $('#deleteProjectModal').modal('hide');
+
+    };
