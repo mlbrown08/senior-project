@@ -38,6 +38,18 @@ module.exports.controller = function (app) {
     });
   });
 
+  /**
+   * GET /account/:id
+   * Render Specific User Profile Page
+   */
+
+  app.get('/account/:id', function (req, res) {
+    res.render('account/userprofile', {
+      url: req.url
+    });
+  });
+
+ /**
  /**
    * POST /account
    * Update User Profile Information
@@ -57,7 +69,6 @@ module.exports.controller = function (app) {
       req.assert('name', 'Your name cannot be empty.').notEmpty();
       req.assert('email', 'Your email cannot be empty.').notEmpty();
       req.assert('email', 'Your email is not valid.').isEmail();
-      req.assert('website', 'Website URL is not valid.').isURL();
 
       var errors = req.validationErrors();
 
@@ -83,10 +94,140 @@ module.exports.controller = function (app) {
 
         user.email = req.body.email.toLowerCase() || '';
         user.profile.name = req.body.name.trim() || '';
-        user.profile.gender = req.body.gender || '';
         user.profile.location = req.body.location.trim() || '';
         user.profile.phone.mobile = req.body.phoneMobile.trim() || '';
-        user.profile.website = req.body.website.trim() || '';
+        user.activity.last_updated = Date.now();
+
+        user.save(function (err) {
+          if (err) {
+            return next(err);
+          }
+
+          // next step, pass user
+          workflow.emit('sendAccountEmail', user);
+
+        });
+      });
+
+    });
+
+    /**
+     * Step 3: Send the User an email letting them know their
+     * password was changed.  This is important in case the
+     * user did not initiate the reset!
+     */
+
+    workflow.on('sendAccountEmail', function (user) {
+
+      // Create reusable transporter object using SMTP transport
+      var transporter = nodemailer.createTransport({
+        service: 'Gmail',
+        auth: {
+          user: config.gmail.user,
+          pass: config.gmail.password
+        }
+      });
+
+      // Render HTML to send using .jade mail template (just like rendering a page)
+      res.render('mail/accountChange', {
+        name:          user.profile.name,
+        mailtoName:    config.smtp.name,
+        mailtoAddress: config.smtp.address
+      }, function (err, html) {
+        if (err) {
+          return (err, null);
+        }
+        else {
+
+          // Now create email text (multiline string as array FTW)
+          var text = [
+            'Hello ' + user.profile.name + '!',
+            'This is a courtesy message to confirm that your profile information was just updated.',
+            'Thanks so much for using our services! If you have any questions, or suggestions, feel free to email us here at ' + config.smtp.address + '.',
+            '  - The ' + config.smtp.name + ' team'
+          ].join('\n\n');
+
+          // Create email
+          var mailOptions = {
+            to:       user.profile.name + ' <' + user.email + '>',
+            from:     config.smtp.name + ' <' + config.smtp.address + '>',
+            subject:  'Your ' + app.locals.application + ' profile was updated',
+            text:     text,
+            html:     html
+          };
+
+          // Send email
+          transporter.sendMail(mailOptions, function (err, info) {
+            if (err) {
+              req.flash('error', { msg: JSON.stringify(err) });
+              debug(JSON.stringify(err));
+              res.redirect('back');
+            } else {
+              req.flash('success', { msg: 'Your profile was updated.' });
+              debug('Message response: ' + info.response);
+              res.redirect('/account');
+            }
+          });
+
+        }
+      });
+
+    });
+
+  /**
+   * Initiate the workflow
+   */
+
+    workflow.emit('validate');
+
+  });
+
+ /**
+ /**
+   * POST /account
+   * Update User Profile Information
+   */
+
+  app.post('/account/userprofile', function (req, res, next) {
+
+    // Create a workflow (here you could also use the async waterfall pattern)
+    var workflow = new (require('events').EventEmitter)();
+
+    /**
+     * Step 1: Validate the form data
+     */
+
+    workflow.on('validate', function () {
+
+      req.assert('name', 'Your name cannot be empty.').notEmpty();
+      req.assert('email', 'Your email cannot be empty.').notEmpty();
+      req.assert('email', 'Your email is not valid.').isEmail();
+
+      var errors = req.validationErrors();
+
+      if (errors) {
+        req.flash('error', errors);
+        return res.redirect('/account');
+      }
+
+      // next step
+      workflow.emit('updateProfile');
+    });
+
+    /**
+     * Step 2: Update the user's information
+     */
+
+    workflow.on('updateProfile', function () {
+
+      User.findById(req.body.userId, function (err, user) {
+        if (err) {
+          return next(err);
+        }
+
+        user.profile.name = req.body.name.trim() || '';
+        user.profile.location = req.body.location.trim() || '';
+        user.profile.phone.mobile = req.body.phoneMobile.trim() || '';
         user.activity.last_updated = Date.now();
 
         user.save(function (err) {
