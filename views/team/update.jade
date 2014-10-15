@@ -12,7 +12,10 @@ block content
         form(action='/team/update', method='POST')
           input(type='hidden', name='_csrf', value=_csrf)
           input(type='hidden', name='teamId', id='teamId')
-          legend Update Team
+          legend
+            h2
+              i.fa.fa-users
+              | &nbsp; Update Team
           .form-group
             label(for='name') Name:
             input.form-control(type='text', name='name', id='name', placeholder='Team Name', autofocus=true, required)
@@ -48,6 +51,28 @@ block content
           //- /USER LIST
         //- Wrapper
 
+        hr
+        
+        h2
+          i.fa.fa-laptop
+          | &nbsp; Current Projects
+          //- Add Project Button
+          a.linkaddproject.btn.btn-primary(href='#', role='button', style='float:right') Add Projects
+        //- Wrapper
+        #wrapper
+
+          //- PROJECT LIST
+          #projectList
+            table.table.table-striped
+              thead
+                th Name
+                th Docker Image
+                th.hidden-xs Date Established
+                th Remove?
+              tbody
+          //- /USER LIST
+        //- Wrapper
+
   #removeUserModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
       .modal-dialog.modal-sm
         .modal-content
@@ -69,19 +94,54 @@ block content
             h4#myModalLabel.modal-title Add Users to Team
           .modal-body
             h4 Users
-            input.form-control(type='hidden', name='user-id', id='user_id', required)
+            input.form-control(type='hidden', name='user_id', id='user_id', required)
             //- ADD USER LIST
             #addUserList
               table.table.table-striped
                 thead
                   th Add?
                   th Name
-                  th Current Team
+                  th Email
                 tbody
           //- /ADDUSER LIST
           .modal-footer
             button.btn.btn-default(type='button', data-dismiss='modal') No
             button#yesAddUser.btn.btn-primary(type='button') Yes!
+
+  #removeProjectModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title Delete confirmation
+          .modal-body
+            h4 Are you sure?
+            input.form-control(type='hidden', name='project_id', id='project_id', required)
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesRemoveProject.btn.btn-primary(type='button') Yes!
+
+  #addProjectModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title Add Projects to Team
+          .modal-body
+            h4 Projects
+            input.form-control(type='hidden', name='project_id', id='project_id', required)
+            //- ADD PROJECT LIST
+            #addProjectList
+              table.table.table-striped
+                thead
+                  th Add?
+                  th Name
+                  th Docker Image
+                tbody
+          //- /ADD PROJECT LIST
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesAddProject.btn.btn-primary(type='button') Yes!
 
   //- HTML 5 Form Notes
   //- ===========================================
@@ -128,6 +188,10 @@ block scripts
       $('#yesRemoveUser').on('click', removeUser);
       $('a.linkadduser').on('click', showAddUserModal);
       $('#yesAddUser').on('click', addUser);
+      $('#projectList table tbody').on('click', 'td a.linkremoveproject', showRemoveProjectModal);
+      $('#yesRemoveProject').on('click', removeProject);
+      $('a.linkaddproject').on('click', showAddProjectModal);
+      $('#yesAddProject').on('click', addProject);
     });
     
     // Functions =============================================================
@@ -148,8 +212,11 @@ block scripts
         $('#name').val(data.name);
         $('#date_established').val(moment(data.date_established).format('MMMM Do YYYY'));
 
-        // Popultate Current Users table
+        // Populate Current Users table
         populateUsersTable();
+
+        // Populate Current Projects table
+        populateProjectsTable();
       });
 
     };
@@ -172,7 +239,26 @@ block scripts
 
       // Inject the whole content string into our existing HTML table
       $('#userList table tbody').html(tableContent);
-    }
+    };
+
+    // Fill projects table with data
+    function populateProjectsTable() {
+
+      // Empty content string
+      var tableContent = '';
+
+      // For each item in our JSON, add a table row and cells to the content string
+      $.each(teamData.projects, function(){
+        tableContent += '<tr>';
+        tableContent += '<td><a href="#" class="linkshowuser btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.name + '</td>';
+        tableContent += '<td>' + this.docker_opts.image + '</td>';
+        tableContent += '<td class="hidden-xs">' + moment(this.date_established).format('MMMM Do YYYY') + '</td>';
+        tableContent += '<td><a href="#" class="linkremoveproject btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+      });
+
+      // Inject the whole content string into our existing HTML table
+      $('#projectList table tbody').html(tableContent);
+    };
 
     // Show Remove User Modal
     function showRemoveUserModal(event) {
@@ -242,7 +328,7 @@ block scripts
             tableContent += '<tr>';
             tableContent += '<td><div id="users"><input type="checkbox" name="users" value="' + this._id + '"></div></td>';
             tableContent += '<td>' + this.profile.name + '</td>';
-            tableContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+            tableContent += '<td>' + this.email + '</td>';
           }
         });
 
@@ -291,5 +377,131 @@ block scripts
       });
       // close the modal
       $('#addUserModal').modal('hide');
+
+    };
+
+    // Show Remove Project Modal
+    function showRemoveProjectModal(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Pop up a confirmation dialog
+      $('#removeProjectModal').modal({keyboard:true,backdrop:'static'});
+
+      // Set Project Id to hidden field
+      // so we pass the user's id through
+      $('#project_id').val($(this).attr('rel'));
+
+    };
+
+    // Remove Project
+    function removeProject(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+      
+      // do our delete
+      $.ajax({
+        type: 'DELETE',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{project_id: $('#project_id').val(), team_id:teamId},
+        url: '/teamdeleteproject'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // jQuery AJAX call for JSON
+        $.getJSON( '/teamlist/' + teamId, function( data ) {
+          // Update our global team data object
+          teamData = data
+          // Update the table
+          populateProjectsTable();
+        });
+      });
+      // close the modal
+      $('#removeProjectModal').modal('hide');
+
+    };
+
+    // Show Add User Modal
+    function showAddProjectModal(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Pop up a confirmation dialog
+      $('#addProjectModal').modal({keyboard:true,backdrop:'static'});
+
+      // Empty content string
+      var tableContent = '';
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/projectlist', function( data ) {
+        // For each item in our JSON, add a table row and cells to the content string
+        $.each(data, function(){
+          // Finds if project is assigned to team
+          // will return undefined if not
+          var projectOnTeam = this.teams.filter(function(obj) {
+            return obj._id == teamId;
+          })[0];
+
+          if(projectOnTeam === undefined) {
+            tableContent += '<tr>';
+            tableContent += '<td><div id="projects"><input type="checkbox" name="projects" value="' + this._id + '"></div></td>';
+            tableContent += '<td>' + this.name + '</td>';
+            tableContent += '<td>' + this.docker_opts.image + '</td>';
+          }
+        });
+
+      // Inject the whole content string into our existing HTML table
+      $('#addProjectList table tbody').html(tableContent);
+
+      });
+    };
+
+    // Add Project
+    function addProject(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+      
+      // Get the projects that are checked from modal
+      // and add them to projectsId array to pass into post
+      var serializedArray = $("#projects input:checked").serializeArray();
+      var projectsIdsArray = [];
+
+      for (var i = 0, length = serializedArray.length; i < length; i++) {
+        projectsIdsArray.push(serializedArray[i]['value']);
+      }
+      
+      // do our update
+      $.ajax({
+        type: 'POST',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{projects:projectsIdsArray, team_id:teamId},
+        url: '/teamaddprojects'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // jQuery AJAX call for JSON
+        $.getJSON( '/teamlist/' + teamId, function( data ) {
+          // Update our global team data object
+          teamData = data
+          // Update the table
+          populateProjectsTable();
+        });
+      });
+      // close the modal
+      $('#addProjectModal').modal('hide');
 
     };

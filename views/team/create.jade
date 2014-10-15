@@ -27,6 +27,18 @@ block content
                   th Current Team
                 tbody
             //- /ADD USER LIST
+          .form-group#projecs
+            label(for='projects') Select Projects:
+            //- ADD USER LIST
+            #projectList
+              table.table.table-striped
+                thead
+                  th Add?
+                  th Name
+                  th Docker Image
+                  th Docker Command
+                tbody
+            //- /ADD USER LIST
           .form-group
             button.btn.btn-success(type='submit')
               i.fa.fa-check
@@ -64,7 +76,7 @@ block scripts
     function populateForm() {
 
       // Empty content string
-      var formContent = '';
+      var userFormContent = '';
 
       // jQuery AJAX call for JSON
       $.getJSON( '/accountlist', function( data ) {
@@ -74,15 +86,37 @@ block scripts
 
         // For each item in our JSON, add a table row and cells to the content string
         $.each(data, function(){
-            formContent += '<tr>';
-            formContent += '<td><input type="checkbox" name="user" value="' + this._id + '"></td>';
-            formContent += '<td>' + this.profile.name + '</td>';
-            formContent += '<td>' + this.email + '</td>';
-            formContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+            userFormContent += '<tr>';
+            userFormContent += '<td><input type="checkbox" name="user" value="' + this._id + '"></td>';
+            userFormContent += '<td>' + this.profile.name + '</td>';
+            userFormContent += '<td>' + this.email + '</td>';
+            userFormContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
         });
 
         // Inject the whole content string into our existing HTML table
-        $('#userList table tbody').html(formContent);
+        $('#userList table tbody').html(userFormContent);
+      });
+
+      // Empty content string
+      var projectFormContent = '';
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/projectlist', function( data ) {
+
+        // Stick our user data array into a userlist variable in the global object
+        projectListData = data;
+
+        // For each item in our JSON, add a table row and cells to the content string
+        $.each(data, function(){
+            projectFormContent += '<tr>';
+            projectFormContent += '<td><input type="checkbox" name="project" value="' + this._id + '"></td>';
+            projectFormContent += '<td>' + this.name + '</td>';
+            projectFormContent += '<td>' + this.docker_opts.image + '</td>';
+            projectFormContent += '<td>' + this.docker_opts.cmd + '</td>';
+        });
+
+        // Inject the whole content string into our existing HTML table
+        $('#projectList table tbody').html(projectFormContent);
       });
 
     };

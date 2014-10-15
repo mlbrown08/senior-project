@@ -45,6 +45,7 @@ block content
                 th.hidden-xs Number of Users
                 th.hidden-xs Number of Projects
                 th.hidden-xs Date Established
+                th Deploy Workstations
                 th Update
                 th Delete?
               tbody
@@ -120,9 +121,16 @@ block scripts
         $.each(data, function(){
           tableContent += '<tr>';
           tableContent += '<td><a href="#" class="linkshowteam btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.name + '</td>';
-          tableContent += '<td class="hidden-xs">' + this.users.length + '</td>';
-          tableContent += '<td class="hidden-xs">' + this.projects.length + '</td>';
+          tableContent += '<td class="hidden-xs">' + ((this.users == null) ? 0 : this.users.length) + '</td>';
+          tableContent += '<td class="hidden-xs">' + ((this.projects == null) ? 0 : this.projects.length) + '</td>';
           tableContent += '<td class="hidden-xs">' + moment(this.date_established).format('MMMM Do YYYY') + '</td>';
+          // Check if Team is Deployed
+          if(this.deployed == false) {
+            tableContent += '<td><a href="#' + this._id + '" class="btn btn-success btn-xs" rel="' + this._id + '">Deploy!</a></td>';
+          }
+          else {
+            tableContent += '<td><i class="fa fa-check"> Deployed</td>' 
+          }
           tableContent += '<td><a href="team/update?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
           tableContent += '<td><a href="#" class="linkdeleteteam btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
         });
@@ -152,16 +160,27 @@ block scripts
       $('#teamInfoName').text(thisTeamObject.name);
       $('#teamInfoEstablished').text(moment(thisTeamObject.date_established).format('MMMM Do YYYY'));
       
-      // Populate Users
-      var userContent = '<ul>';
-      $.each(thisTeamObject.users, function(){
-        userContent += '<li>' + this.profile.name + '</li>';
-      });
+      // Populate Users if not null
+      if(thisTeamObject.users !== null) { 
+        var userContent = '<ul>';
+        $.each(thisTeamObject.users, function(){
+          userContent += '<li>' + this.profile.name + '</li>';
+        });
 
-      // Inject the whole content string into our existing HTML table
-      $('#teamInfoUsers').html(userContent);
-
+        // Inject the whole content string into our existing HTML table
+        $('#teamInfoUsers').html(userContent);
+      }
       // TODO - Populate Projects
+      // Populate Projects if not null
+      if(thisTeamObject.projects !== null) { 
+        var projectContent = '<ul>';
+        $.each(thisTeamObject.projects, function(){
+          projectContent += '<li>' + this.name + '</li>';
+        });
+
+        // Inject the whole content string into our existing HTML table
+        $('#teamInfoProjects').html(projectContent);
+      }
     };
 
     // Delete User
