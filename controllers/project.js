@@ -80,9 +80,9 @@ module.exports.controller = function (app) {
       });
 
       // Remove Project from Users
-      User.find({ projects:project._id}, function (err, users) {
+      User.find({ projects:project._id }, function (err, users) {
         users.forEach( function (user) {
-          user.update({ $pull: {projects:project._id }}, function (err) {
+          user.update({ $pull: { projects:project._id }}, function (err) {
             if (err) {
               return res.send({ msg: err });
             }
