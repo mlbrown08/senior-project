@@ -12,6 +12,8 @@ var config        = require('../config/config');
 var passport      = require('passport');
 var nodemailer    = require('nodemailer');
 var LoginAttempt  = require('../models/LoginAttempt');
+var passportConf  = require('../config/passport');
+
 
 /**
  * User Controller
@@ -170,7 +172,7 @@ module.exports.controller = function (app) {
               delete req.session.attemptedURL;
               res.redirect(redirectURL);
             } else {
-              res.redirect('/api');
+              res.redirect('/demo');
             }
 
           });
@@ -347,10 +349,7 @@ module.exports.controller = function (app) {
    * Render signup page
    */
 
-  app.get('/signup', function (req, res) {
-    if (req.user) {
-      return res.redirect('/');
-    }
+  app.get('/signup', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
     res.render('account/signup', {
       url: req.url
     });
@@ -361,7 +360,7 @@ module.exports.controller = function (app) {
    * Process a *regular* signup
    */
 
-  app.post('/signup', function (req, res, next) {
+  app.post('/signup', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res, next) {
 
     // Begin a workflow
     var workflow = new (require('events').EventEmitter)();
@@ -429,6 +428,7 @@ module.exports.controller = function (app) {
         'profile.name': req.body.name.trim(),
         email:          req.body.email.toLowerCase(),
         password:       req.body.password,
+        type:           req.body.type,
         verifyToken:    verifyToken,
         verified:       verified
       });
@@ -580,7 +580,8 @@ module.exports.controller = function (app) {
       });
 
       // next step
-      workflow.emit('logUserIn', user);
+      res.redirect('/accounts');
+      // workflow.emit('logUserIn', user);
     });
 
     /**
@@ -698,7 +699,6 @@ module.exports.controller = function (app) {
       user.verified         = true;  // social users don't require verification
       user.email            = req.body.email.toLowerCase();
       user.profile.name     = newUser.profile.name;
-      user.profile.gender   = newUser.profile.gender;
       user.profile.location = newUser.profile.location;
       user.profile.website  = newUser.profile.website;
       user.profile.picture  = newUser.profile.picture;

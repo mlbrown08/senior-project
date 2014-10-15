@@ -24,15 +24,11 @@ block content
             | &nbsp;
             a(href='', id='userInfoEmail')
           p.hidden-xs
+            strong Type:
+            |  <span id='userInfoType'></span>
+          p.hidden-xs
             strong Location:
             |  <span id='userInfoLocation'></span>
-          p.hidden-xs
-            strong Gender:
-            |  <span id='userInfoGender'></span>
-          p.hidden-xs
-            strong Website:
-            | &nbsp;
-            a(href='', id='userInfoWebsite')
           p
             strong Date Established:
             |  <span id='userInfoEstablished'></span>
@@ -48,6 +44,8 @@ block content
           h2
             i.fa.fa-users
             | &nbsp;#{application} Accounts
+        //- Create Account Button
+        a.btn.btn-primary(href='/signup', role='button') Create User
         //- Wrapper
         #wrapper
 
@@ -59,6 +57,7 @@ block content
                 th.hidden-xs Email
                 th.hidden-xs Date Established
                 th Last Active
+                th Update
                 th Delete?
               tbody
           //- /USER LIST
@@ -74,12 +73,11 @@ block content
             h4#myModalLabel.modal-title Delete confirmation
           .modal-body
             h4 Are you sure?
+            input.form-control(type='hidden', name='userId', id='userId', required)
           .modal-footer
             button.btn.btn-default(type='button', data-dismiss='modal') No
-            button#yes.btn.btn-primary(type='button') Yes!
+            button#yesDeleteUser.btn.btn-primary(type='button') Yes!
 
-  //- script(src='lib/moment/min/moment.min.js')
-  //- script(src='lib/bootstrap/js/modal.js')
 block scripts
   script.
     // Userlist data array for filling in info box
@@ -111,7 +109,8 @@ block scripts
       $('#userList table tbody').on('click', 'td a.linkshowuser', showUserInfo);
 
       // Delete User link click
-      $('#userList table tbody').on('click', 'td a.linkdeleteuser', deleteUser);
+      $('#userList table tbody').on('click', 'td a.linkdeleteuser', showDeleteUserModal);
+      $('#yesDeleteUser').on('click', deleteUser);
 
     });
 
@@ -136,6 +135,7 @@ block scripts
           tableContent += '<td class="hidden-xs"><a href="mailto:' + this.email + '">' + this.email + '</a></td>';
           tableContent += '<td class="hidden-xs">' + moment(this.activity.date_established).format('MMMM Do YYYY') + '</td>';
           tableContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+          tableContent += '<td><a href="account/userprofile?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
           tableContent += '<td><a href="#" class="linkdeleteuser btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
         });
 
@@ -164,14 +164,26 @@ block scripts
       $('#userPicture').attr("src", (thisUserObject.profile.picture));
       $('#userInfoName').text(thisUserObject.profile.name);
       $('#userInfoEmail').attr('href', 'mailto:' + thisUserObject.email).text(thisUserObject.email);
+      $('#userInfoType').text(thisUserObject.type);
       $('#userInfoLocation').text(thisUserObject.profile.location);
-      $('#userInfoGender').text(thisUserObject.profile.gender);
-      if (thisUserObject.profile.website) {
-        $('#userInfoWebsite').attr('href', thisUserObject.profile.website).text('Website Link');
-      }
       $('#userInfoEstablished').text(moment(thisUserObject.activity.date_established).format('MMMM Do YYYY'));
       $('#userInfoLogon').text(moment(thisUserObject.activity.last_logon).fromNow());
       $('#userInfoUpdate').text(moment(thisUserObject.activity.last_update).fromNow());
+    };
+
+    // Show Delete User Modal
+    function showDeleteUserModal(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // show modal
+      $('#myModal').modal({keyboard:true,backdrop:'static'});
+
+      // Set Project Id to hidden field
+      // so we pass the Project's Id through
+      $('#userId').val($(this).attr('rel'));
+    
     };
 
     // Delete User
@@ -180,37 +192,23 @@ block scripts
       // Prevent Link from Firing
       event.preventDefault();
 
-      // Pop up a confirmation dialog
-      // Convoluted because we have to
-      // pass the user's id through
-      function showmodal(userid) {
-        // show modal
-        $('#myModal').modal({keyboard:true,backdrop:'static'});
-        // if "yes" clicked
-        $('#yes').on('click', function () {
-          // do our delete
-          $.ajax({
-            type: 'DELETE',
-            //- headers: { 'X-CSRF-Token': '#{token}' },
-            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-            url: '/accountlist/' + userid
-          }).done(function( response ) {
-            // Check for a successful (blank) response
-            if (response.msg === '') {
-            }
-            else {
-              alert('Error: ' + response.msg);
-            }
-            // Update the table
-            populateTable();
-          });
-          // close the modal
-          $('#myModal').modal('hide');
-        });
-      }
-
-      // call modal function with the user's account id
-      showmodal($(this).attr('rel'));
+      // do our delete
+      $.ajax({
+        type: 'DELETE',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/accountlist/' + $('#userId').val()
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // Update the table
+        populateTable();
+      });
+      // close the modal
+      $('#myModal').modal('hide');
 
     };
-
