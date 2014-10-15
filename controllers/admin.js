@@ -5,6 +5,7 @@
  */
 
 var User          = require('../models/User');
+var Team          = require('../models/Team');
 var passportConf  = require('../config/passport');
 
 /**
@@ -57,13 +58,40 @@ module.exports.controller = function (app) {
   });
 
   /**
+   * GET /accountlist/:id
+   * JSON specefic account api
+   */
+
+  app.get('/accountlist/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+    User.findById(req.params.id, function (err, items) {
+      if (err) {
+        return (err, null);
+      }
+      res.json(items);
+    });
+  });
+
+  /**
    * DEL /accountlist/:id
    * JSON accounts delete api
    */
 
   app.delete('/accountlist/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
-    User.remove({ _id : req.params.id }, function (err, result) {
-      res.send((result === 1) ? { msg: '' } : { msg: 'error: ' + err });
+    // Find User to be deleted
+    User.findById(req.params.id, function (err, user) {
+      // Remove User from their Team
+      user.teams.forEach( function (team) {
+        Team.findByIdAndUpdate(team, { $pull: { users:user._id }}, function (err) {
+          if (err) {
+            return res.send({ msg: err });
+          }
+        });
+      });
+
+      // Remove User
+      User.remove({ _id:req.params.id }, function (err, result) {
+        res.send((result === 1) ? { msg: '' } : { msg: 'error: ' + err });
+      });
     });
   });
 

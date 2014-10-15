@@ -11,14 +11,25 @@ block content
         br
         form(action='/signup', method='POST')
           input(type='hidden', name='_csrf', value=_csrf)
-          legend Sign Up
+          legend Create User
           .form-group
             label.sr-only(for='name') Name:
-            input.form-control(type='text', name='name', id='name', placeholder='Your Name', autofocus=true, required)
+            input.form-control(type='text', name='name', id='name', placeholder='User Name', autofocus=true, required)
           .form-group
             label.sr-only(for='email') Email:
-            input.form-control(type='email', name='email', id='email', placeholder='Your Email', required)
+            input.form-control(type='email', name='email', id='email', placeholder='User Email', required)
             #hint
+          .form-group
+            label.sr-only(for='type') User Type:
+            .radio
+              label
+                input(type='radio', checked='user', name='type', value='user', data-toggle='radio')
+                | User
+            .radio
+              label
+                input(type='radio',  name='type', value='admin', data-toggle='radio')
+                | Admin
+          .form-group
           .form-group
             label.sr-only(for='password') Password:
 
@@ -35,7 +46,7 @@ block content
           .form-group
             button.btn.btn-success(type='submit')
               i.fa.fa-check
-              | &nbsp;Sign Up
+              | &nbsp;Create User
             | &nbsp;
             a.btn.btn-link(href='/login') Already have an account?
         br

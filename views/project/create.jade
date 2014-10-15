@@ -1,0 +1,95 @@
+extends ../layouts/layout
+
+block head
+  title #{application} &middot; Create Project
+
+block content
+  .container
+    .row
+      .col-sm-6.col-sm-offset-3
+        br
+        br
+        form(action='/project/create', method='POST')
+          input(type='hidden', name='_csrf', value=_csrf)
+          legend 
+            h2
+              i.fa.fa-laptop
+              | &nbsp; Create Project
+          .form-group
+            label(for='name') Name:
+            input.form-control(type='text', name='name', id='name', placeholder='Project Name', autofocus=true, required)
+          .form-group
+            legend
+              h2
+                i.fa.fa-tasks
+                Docker Container Options
+          .form-group
+            label(for='image') Docker Image:
+            select.form-control(name='image', id='image')
+          .form-group
+            label(for='cmd') Command:
+            input.form-control(type='text', name='cmd', id='cmd', value='/bin/bash', required)
+          .form-group
+            label(for='containerPort') Container Port:
+            input.form-control(type='text', name='containerPort', id='containerPort', placeholder='Ex. - 5000/tcp')
+          .form-group
+            label(for='hostPort') Host Port:
+            input.form-control(type='text', name='hostPort', id='hostPort', placeholder='Ex. - 49153')
+          .form-group
+            button.btn.btn-success(type='submit')
+              i.fa.fa-check
+              | &nbsp;Create Project
+            | &nbsp;
+
+  //- HTML 5 Form Notes
+  //- ===========================================
+  //- 1) Always add labels!
+  //-    Screen readers will have trouble with your forms if you don't include a label for every input.
+  //-    NOTE: you can hide the labels using the .sr-only class.
+  //- 2) Use proper HTML5 input types (email, password, date, url, etc.)  This adds some HTML5 validation as
+  //-    well as the correct keyboard on mobile devices.
+  //- 3) When using the pattern attribute, the ^ and $ for the start and end of the regular expression
+  //-    are implied and don't need to be included.
+  //- 4) You can help the user by including a title attribute that tells them the format you require.
+
+block scripts
+  script.
+    $(document).ready(function() {
+      //- Async Load moment.js
+      $.ajax({
+        type: 'GET',
+        url: '../lib/moment/min/moment.min.js',
+        dataType: 'script',
+        cache: true
+      }).done(function(script, textStatus) {
+        // Now populate the user table
+        populateDockerImages();
+      });
+
+    });
+    
+    // Fill form with data
+    function populateDockerImages() {
+
+      // Empty content string
+      var formContent = '';
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/docker/images', function( data ) {
+
+        // For each item in our JSON, add the Docker Image to the content string
+        $.each(data, function(){
+          // Holds all the RepoTags associated with an image id
+          var repoTags = this.RepoTags;
+
+          // For each RepoTag in out array, add a table row and cells to the content string
+          for( i = 0; i < repoTags.length; i++ ) {
+            formContent += '<option>' + repoTags[i] + '</option>';
+          }
+        });
+
+        // Inject the whole content string into our existing HTML form
+        $('#image').html(formContent);
+      });
+
+    };
