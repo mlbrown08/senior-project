@@ -33,7 +33,7 @@ var teamSchema = new mongoose.Schema({
   name: { type: String, unique: true, index: true },
   date_established: { type: Date, default: Date.now },
   users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Poject' }]
+  projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project' }]
 
 });
 

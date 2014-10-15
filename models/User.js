@@ -39,9 +39,9 @@ var userSchema = new mongoose.Schema({
   // DEFAULT TYPE SHOULB BE 'user'!
   // type: { type: String, default: 'user' },
 
-  team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+  teams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }],
   projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'projects' }],
-  workspaces: [{ type: mongoose.Schema.Types.ObjectId, ref: 'workspaces' }],
+  workspaces: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Workspace' }],
   
   facebook: { type: String, unique: true, sparse: true },
   twitter: { type: String, unique: true, sparse: true },

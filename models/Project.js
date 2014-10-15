@@ -32,8 +32,15 @@ var projectSchema = new mongoose.Schema({
 
   name: { type: String, unique: true, index: true },
   date_established: { type: Date, default: Date.now },
-  team: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  docker_image: { type: String }
+  teams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }],
+  docker_opts: { 
+    image: { type: String, default: '' },
+    cmd: { type: String, default: '' },
+    container_port: { type: String, default: '' },
+    host_port: { type: String, default: '' },
+    host_volume: { type: String, default: '' },
+    mount_point: { type: String, default: '' }
+  }
 
 });
 
