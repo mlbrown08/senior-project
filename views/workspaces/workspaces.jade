@@ -1,34 +1,14 @@
 extends ../layouts/layout
 
 block head
-  title #{application} &middot; Docker Demo
-
-block styles
-  link(rel='stylesheet', href='/lib/animate.css/animate.css')
+  title #{application} &middot; Workspaces
 
 block content
-  .jumbotron.white
-    .container
-      h1 Docker Remote API Demo
-      .row
-        .col-md-7.col-md-push-5
-          img.center-block.img-responsive.animated.bounceInLeft(alt='Docker Ship Logo', src='img/docker-logo-ship.png', width='400px')
-        .col-md-4.col-md-offset-1.col-md-pull-7
-          ol.fa-ol.visible-md.visible-lg
-            li Getting Docker Images
-            li Working with Images
-            li Working with Containers
-            li Run Python Webserver
-
   .container
-    br
     .row
-      h2 Getting Docker Images
-      ul.visible-md.visible-lg
-        li: a(href='https://registry.hub.docker.com/', title='Docker Hub', target='_blank') Docker Hub
-        li: a(href='https://registry.hub.docker.com/u/training/webapp/dockerfile/', title='DOCKERFILE', target='_blank') Create DOCKERFILE
-    .row
-      h2 List Images
+      h2
+        i.fa.fa-fw.fa-laptop
+        | &nbsp;Docker Images
         .btn.btn-primary(href='#', role='button', id='listImages', style='float:right;') Refresh
 
       //- IMAGE LIST
@@ -43,27 +23,14 @@ block content
           tbody
       //- /IMAGE LIST
     .row
-      h2 List Containers
-        .btn.btn-primary(href='#', role='button', id='listContainers', style='float: right;') Refresh
+      h2
+        i.fa.fa-fw.fa-laptop
+        | &nbsp;Workspaces
+        .btn.btn-primary(href='#', role='button', id='listWorkspaces', style='float: right;') Refresh
 
       //- CONTAINER LIST
       #containerList
-        table.table
-          thead
-            th Id
-            th Image
-            th Command
-            th Status
-            th Names
-            th Start
-            th Stop
-            th Remove
-          tbody
       //- /CONTAINER LIST
-    .row
-      h2 Running Python Webserver
-      pre#editor
-      .btn.btn-primary(href='#', role='button', id='savefile' ) Save
 
   #myModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
       .modal-dialog.modal-sm
@@ -144,61 +111,10 @@ block content
 
 //- Page-specific stuff
 block scripts
-  //- Async load odometer styles
   script.
-    var cb = function() {
-      var l = document.createElement('link'); l.rel = 'stylesheet';
-      l.href = 'lib/odometer/themes/odometer-theme-minimal.css';
-      var h = document.getElementsByTagName('head')[0]; h.parentNode.insertBefore(l, h);
-    };
-    var raf = requestAnimationFrame || mozRequestAnimationFrame ||
-        webkitRequestAnimationFrame || msRequestAnimationFrame;
-    if (raf) raf(cb);
-    else window.addEventListener('load', cb);
+    // Container list data array for filling in tables
+    var containerListData = [];
 
-  //- Tweak the styles a bit...
-  style.
-    body {
-        margin-bottom: 400px;
-    }
-    #editor {
-        position: relative;
-        height: 300px;
-        width: 93%;
-    }
-    .github-count {
-      margin-top:20px;
-      font-size: 20px;
-      text-align: center;
-    }
-    .odometer-label {
-      margin-right: 10px;
-      line-height: 1;
-      vertical-align: middle;
-    }
-    .odometer {
-      padding: 13px 21px 11px;
-      margin: auto;
-      line-height: 1 !important;
-      border-radius: 6px;
-    }
-    .odometer-label a {
-      text-decoration: none;
-    }
-    .odometer-label a:hover {
-      color: #B10DC9;
-    }
-
-  // - Load Ace Editor.js
-  script(src='lib/ace/ace.js', type='text/javascript')
-
-  // - Configure Ace Editor.js
-  script.
-    var editor = ace.edit('editor');
-    editor.setTheme('ace/theme/textmate');
-    editor.getSession().setMode('ace/mode/python');
-  
-  script.
     $(document).ready(function() {
       //- Async Load Bootstrap Modal.js
       $.ajax({
@@ -215,8 +131,6 @@ block scripts
         dataType: 'script',
         cache: true
       }).done(function(script, textStatus) {
-          // Load app.py file in Ace Editor
-          loadFile();
           // Populate tables
           populateImageTable();
           populateContainersTable();
@@ -224,20 +138,17 @@ block scripts
       
       // List Images link click
       $('#listImages').on('click', listImages);
-      $('#listContainers').on('click', listContainers);
-      $('#savefile').on('click', saveFile);
+      $('#listWorkspaces').on('click', listWorkspaces);
       $('#imageList table tbody').on('click', 'td a.linkcreatecontainer', createContainerModal);
       $('#imageList table tbody').on('click', 'td a.linkdeleteimage', deleteImage);
-      $('#containerList table tbody').on('click', 'td a.linkstartcontainer', startContainer);
-      $('#containerList table tbody').on('click', 'td a.linkstopcontainer', stopContainer);
-      $('#containerList table tbody').on('click', 'td a.linkremovecontainer', removeContainer);
-      
+
       // Yes Button to create a container
       // Moved out of function because keep calling for each click
       $('#yesCreateContainer').on('click', createContainer);
 
     });
       
+    // Docker Image Functions =====================================================
     // List Images when button is clicked
     function listImages(event) {
 
@@ -256,9 +167,6 @@ block scripts
 
       // jQuery AJAX call for JSON
       $.getJSON( '/docker/images', function( data ) {
-
-        // Stick our user data array into a userlist variable in the global object
-        userListData = data;
 
         // For each item in our JSON, add a table row and cells to the content string
         $.each(data, function(){
@@ -387,16 +295,8 @@ block scripts
       $('#volume').val('');
     };
 
-    function listContainers(event) {
-
-      // Prevent Link from Firing
-      event.preventDefault();
-      
-      // List Containers 
-      populateContainersTable();
-
-    };
-    function listContainers(event) {
+    // Workspaces Functions =====================================================
+    function listWorkspaces(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
@@ -411,32 +311,119 @@ block scripts
 
       // Empty content string
       var tableContent = '';
+      var containerTableIds = [];
 
       // jQuery AJAX call for JSON
       $.getJSON( '/docker/containers', function( data ) {
 
-        // Stick our user data array into a userlist variable in the global object
-        userListData = data;
+        // Stick our user data array into a containerlist variable in the global object
+        containerListData = data;
+        // Sort our Contianers in alphabetical order
+        containerListData.sort(function(obj1, obj2) {
+             return obj1.Names[0].toLowerCase() > obj2.Names[0].toLowerCase() ? 1 : -1;
+        });
 
+        var team = ' ';
+        var project = ' ';
         // For each item in our JSON, add a table row and cells to the content string
-        $.each(data, function(){
+        $.each(containerListData, function(){
+          // For First Team
+          if (team == ' ') {
+            team = this.Names[0].split('_')[0];
+            tableContent += '<h2>' + team.replace('-',' ').slice(1) + '</h2>';
+          }
+
+          // For First Project
+          if (project == ' ' ) {
+            project = this.Names[0].split('_')[1];
+            tableContent += '<h4 style="margin-left:1em">' + project.replace('-',' ') + '</h4>';
+            tableContent += '<table class="table" id ="' + project + '" style="margin-left:2em">';
+            tableContent += '<thead>';
+            containerTableIds.push(project);
+            tableContent += '<tr>';
+            tableContent += '<th>User</td>';
+            tableContent += '<th>ID</td>';
+            tableContent += '<th>Image</td>';
+            tableContent += '<th>Host Port</td>';
+            tableContent += '<th>Status</td>';
+            tableContent += '<th>Start</td>';
+            tableContent += '<th>stop</td>';
+            tableContent += '<th>Remove</td>';
+            tableContent += '<th>Recreate</td>';
+            tableContent += '</tr>';
+            tableContent += '</thead>';
+            tableContent += '<tbody>';
+          }
+          else if (this.Names[0].search(project) == -1 || this.Names[0].search(team + '_' + project)) {
+            project = this.Names[0].split('_')[1];
+            tableContent += '</tbody>';
+            tableContent += '</table>';
+
+            if (this.Names[0].search(team) == -1 ) {
+              team = this.Names[0].split('_')[0];
+              tableContent += '<hr>';
+              tableContent += '<h2>' + team.replace('-',' ').slice(1) + '</h2>';
+            }
+
+            tableContent += '<h4 style="margin-left:1em">' + project.replace('-',' ') + '</h4>';
+            containerTableIds.push(project);
+            tableContent += '<table class="table" id ="' + project + '" style="margin-left:2em">';
+            tableContent += '<thead>';
+            tableContent += '<tr>';
+            tableContent += '<th>User</td>';
+            tableContent += '<th>ID</td>';
+            tableContent += '<th>Image</td>';
+            tableContent += '<th>Host Port</td>';
+            tableContent += '<th>Status</td>';
+            tableContent += '<th>Start</td>';
+            tableContent += '<th>stop</td>';
+            tableContent += '<th>Remove</td>';
+            tableContent += '<th>Recreate</td>';
+            tableContent += '</tr>';
+            tableContent += '</thead>';
+            tableContent += '<tbody>';
+          }
+
           tableContent += '<tr>';
+          // See Container has a Users Name
+          // If not put "Unknown" for name
+          if (this.Names[0].split('_')[2] !== undefined) {
+            tableContent += '<td>' + this.Names[0].split('_')[2].replace('-',' ') + '</td>';
+          }
+          else {
+            tableContent += '<td>Unknown</td>';
+          }
           tableContent += '<td>' + this.Id.substring(0,8) + '</td>';
           tableContent += '<td>' + this.Image + '</td>';
-          tableContent += '<td>' + this.Command + '</td>';
+          // Add Ports to table
+          if (this.Ports.length > 0 ) {
+            $.each(this.Ports, function() {
+              tableContent += '<td>' + ((this.PublicPort != 0) ? this.PublicPort : 'None' ) + '</td>';
+            });
+          }
+          else {
+            tableContent += '<td>None</td>';
+          }
           tableContent += '<td>' + this.Status + '</td>';
-          tableContent += '<td>' + this.Names + '</td>';
           tableContent += '<td><a href="#" class="linkstartcontainer btn btn-primary" rel="' + this.Id + '">Start</a></td>';
           tableContent += '<td><a href="#" class="linkstopcontainer btn btn-warning" rel="' + this.Id + '">Stop</a></td>';
           tableContent += '<td><a href="#" class="linkremovecontainer btn btn-danger" rel="' + this.Id + '">Remove</a></td>';
+          tableContent += '<td><a href="#" class="linkrecreatecontainer btn btn-success" rel="' + this.Id + '">Recreate</a></td>';
+          tableContent += '</tr>';
         });
-
         // Inject the whole content string into our existing HTML table
-        $('#containerList table tbody').html(tableContent);
-      });
+        $('#containerList').html(tableContent);
 
+        // Links for Workspaces Buttons
+        $.each(containerTableIds, function(index, value) {
+            $('#' + value + ' tbody').on('click', 'td a.linkstartcontainer', startContainer);
+            $('#' + value + ' tbody').on('click', 'td a.linkstopcontainer', stopContainer);
+            $('#' + value + ' tbody').on('click', 'td a.linkremovecontainer', removeContainer);
+            $('#' + value + ' tbody').on('click', 'td a.linkrecreatecontainer', recreateContainer);
+        });
+      });
     };
-    
+
     // Start Container
     function startContainer(event) {
 
@@ -539,38 +526,86 @@ block scripts
       }
       // call modal function with the container's id
       showmodal($(this).attr('rel'));
-    }
+    };
+    
+    // Recreate Workspace
+    function recreateContainer(event) {
 
-    function loadFile() {
-      $.ajax({
-        type: 'POST',
-        //- headers: { 'X-CSRF-Token': '#{token}' },
-        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-        data: {file:'/home/mls102390/src/app.py'},
-        url: '/workspace/readfile'
-      }).done(function( response ) {
-        // Update Ace Editor
-        if (response.msg === '') {
-          editor.setValue(response.data, 1);
-        }
-      });
-    }
-
-    function saveFile(event) {
       // Prevent Link from Firing
       event.preventDefault();
 
+      // Retrieve container id from link rel attribute
+      var thisContainerId = $(this).attr('rel');
+
+      // Get Index of object based on id value
+      var arrayPosition = containerListData.map(function(arrayItem) { return arrayItem.Id; }).indexOf(thisContainerId);
+      
+      // Get our Contianer Object
+      var thisContainerObject = containerListData[arrayPosition];
+
+      // jQuery AJAX call for JSON
+      // Inspects cantainer to be deleted
       $.ajax({
-        type: 'POST',
-        //- headers: { 'X-CSRF-Token': '#{token}' },
+        type: 'GET',
+        async: false,
         headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-        data:{
-          file:'/home/mls102390/src/app.py', 
-          text:editor.getValue()
-        },
-        url: '/workspace/savefile'
-      }).done(function( response ) {
-        // Update Ace Editor
-        loadFile();
+        url: '/docker/inspectcontainer/' + thisContainerObject.Id,
+        success: function(data) {
+          // Get host and container port
+          var containerPort = 0;
+          var hostPort = 0;
+          $.each(thisContainerObject.Ports, function() {
+            containerPort = this.PrivatePort;
+            hostPort = this.PublicPort;
+          });
+
+          // Get our container options,
+          // so we can recreate it
+          var opts = {
+            image: thisContainerObject.Image,
+            name: thisContainerObject.Names,
+            cmd: thisContainerObject.Command,
+            tty: true,
+            containerPort: containerPort,
+            hostPort: hostPort,
+            volume: JSON.stringify(data.Volumes).slice(1, -1).replace(/"/g,'')
+          };
+
+         // Stop the Container
+         $.ajax({
+            type: 'POST',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/docker/stopcontainer/' + data.Id
+          });
+  
+          // Remove the Container
+          $.ajax({
+            type: 'DELETE',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/docker/removecontainer/' + data.Id
+          });
+  
+          // Create Docker Container
+          $.ajax({
+            type: 'POST',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            data: opts,
+            url: '/docker/createcontainer'
+          }).done(function( response ) {
+            // Check for a successful (blank) response
+            if (response.msg === '') {
+            }
+            else {
+              alert('Error: ' + response.msg);
+            }
+          });
+        }
       });
-    }
+
+      // Update the table
+      populateContainersTable();
+
+    };

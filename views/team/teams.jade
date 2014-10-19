@@ -34,6 +34,9 @@ block content
             | &nbsp;#{application} Teams
         //- CREATE TEAM
         a.btn.btn-primary(href='/team/create', role='button') Create Team
+        if config.userData
+          //- BASE FILE LOCATION
+          input.hidden(type='text', name='fileLocation', id='fileLocation', value=config.userDataLocation)
         //- Wrapper
         #wrapper
 
@@ -45,7 +48,7 @@ block content
                 th.hidden-xs Number of Users
                 th.hidden-xs Number of Projects
                 th.hidden-xs Date Established
-                th Deploy Workstations
+                th Deploy Workspaces
                 th Update
                 th Delete?
               tbody
@@ -65,6 +68,13 @@ block content
           .modal-footer
             button.btn.btn-default(type='button', data-dismiss='modal') No
             button#yes.btn.btn-primary(type='button') Yes!
+  #progressModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-body
+            h4.text-center Creating Workspaces
+            h4.text-center.text-primary
+              i.fa.fa-circle-o-notch.fa-spin
 
   //- script(src='lib/moment/min/moment.min.js')
   //- script(src='lib/bootstrap/js/modal.js')
@@ -98,6 +108,12 @@ block scripts
       // Team Name link click
       $('#teamList table tbody').on('click', 'td a.linkshowteam', showTeamInfo);
 
+      // Deploy Team link click
+      $('#teamList table tbody').on('click', 'td a.linkdeployteam', deployTeam);
+
+      // Redeploy Team link click
+      $('#teamList table tbody').on('click', 'td a.linkredeployteam', redeployTeam);
+
       // Delete Team link click
       $('#teamList table tbody').on('click', 'td a.linkdeleteteam', deleteTeam);
 
@@ -126,10 +142,10 @@ block scripts
           tableContent += '<td class="hidden-xs">' + moment(this.date_established).format('MMMM Do YYYY') + '</td>';
           // Check if Team is Deployed
           if(this.deployed == false) {
-            tableContent += '<td><a href="#' + this._id + '" class="btn btn-success btn-xs" rel="' + this._id + '">Deploy!</a></td>';
+            tableContent += '<td><a href="#' + this._id + '" class="linkdeployteam btn btn-success btn-xs" rel="' + this._id + '">Deploy!</a></td>';
           }
           else {
-            tableContent += '<td><i class="fa fa-check"> Deployed</td>' 
+            tableContent += '<td><a href="#' + this._id + '" class="linkredeployteam btn btn-warning btn-xs" rel="' + this._id + '">Redeploy!</a></td>';
           }
           tableContent += '<td><a href="team/update?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
           tableContent += '<td><a href="#" class="linkdeleteteam btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
@@ -141,25 +157,25 @@ block scripts
 
     };
 
-    // Show Yeam Info
+    // Show Team Info
     function showTeamInfo(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
 
-      // Retrieve username from link rel attribute
-      var thisTeamName = $(this).attr('rel');
+      // Retrieve teamname from link rel attribute
+      var thisTeamId = $(this).attr('rel');
 
       // Get Index of object based on id value
-      var arrayPosition = teamListData.map(function(arrayItem) { return arrayItem._id; }).indexOf(thisTeamName);
+      var arrayPosition = teamListData.map(function(arrayItem) { return arrayItem._id; }).indexOf(thisTeamId);
 
-      // Get our User Object
+      // Get our Team Object
       var thisTeamObject = teamListData[arrayPosition];
 
       //Populate Info Box
       $('#teamInfoName').text(thisTeamObject.name);
       $('#teamInfoEstablished').text(moment(thisTeamObject.date_established).format('MMMM Do YYYY'));
-      
+ 
       // Populate Users if not null
       if(thisTeamObject.users !== null) { 
         var userContent = '<ul>';
@@ -170,7 +186,7 @@ block scripts
         // Inject the whole content string into our existing HTML table
         $('#teamInfoUsers').html(userContent);
       }
-      // TODO - Populate Projects
+
       // Populate Projects if not null
       if(thisTeamObject.projects !== null) { 
         var projectContent = '<ul>';
@@ -182,6 +198,199 @@ block scripts
         $('#teamInfoProjects').html(projectContent);
       }
     };
+
+    // Deploy Workspaces
+    function deployTeam(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Show Modal
+      $('#progressModal').modal({keyboard:true,backdrop:'static'});
+
+      // Retrieve team id from link rel attribute
+      var thisTeamId = $(this).attr('rel');
+
+      // Get Index of object based on id value
+      var arrayPosition = teamListData.map(function(arrayItem) { return arrayItem._id; }).indexOf(thisTeamId);
+
+      // Get our Team Object
+      var thisTeamObject = teamListData[arrayPosition];
+
+      // Create Containers
+      createContainers(thisTeamObject);
+
+      // Set Team to deployed
+      $.ajax({
+        type: 'POST',
+        async: false,
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/teamdeploy/' + thisTeamObject._id
+      });
+
+      // Hide Modal
+      $('#progressModal').modal('hide');
+
+      // Update the table
+      populateTable();
+
+    };
+
+    // Create Containers
+    function createContainers(team) {
+      $.each(team.projects, function(){
+        var project = this;
+        var hostPort = '';
+        var lastHostPort = '';
+        var usedPorts = [];
+
+        // Check if Project needs to use Ports
+        if (project.docker_opts.host_port !== '') {
+          hostPort = parseInt(project.docker_opts.host_port.split(':')[0]);
+          mlastHostPort = parseInt(project.docker_opts.host_port.split(':')[1]);
+
+          // Get host ports
+          $.ajax({
+            type: 'GET',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/docker/containers',
+            success: function(data) {
+              $.each( data, function () {
+                if (this.Names[0].search('_' + project.name + '_') != -1 ) {
+                  if (this.Ports.length > 0 ) {
+                    $.each(this.Ports, function() {
+                      usedPorts.push( this.PublicPort );
+                    });
+                  }
+                }
+              });
+            }
+          });
+        }
+
+        $.each(team.users, function(){
+          var user = this;
+
+          //Check if host port is used
+          while( usedPorts.indexOf(hostPort) != -1 ) {
+              hostPort += 1;
+          }
+
+          // Check for User data
+          var volume = '';
+          if ($('#fileLocation').length) {
+            volume = $('#fileLocation').val() + ':/workspace';
+          }
+
+
+          // Create Docker Container
+          var opts = {
+            image: project.docker_opts.image,
+            // Name is in the format team_project_username
+            // Note: Docker Name cannot contain spaces
+            // so used hyphens instead of spaces
+            name: team.name.replace(/ /g,'-') + '_' + project.name.replace(/ /g, '-') + '_' + user.profile.name.replace(/ /g,'-'),
+            cmd: project.docker_opts.cmd,
+            tty: true,
+            containerPort: project.docker_opts.container_port,
+            hostPort: host_port,
+            volume: volume
+          };
+
+          // Only create container if enough host ports
+          if (hostPort <= lasHostPort) {
+            $.ajax({
+              type: 'POST',
+              async: false,
+              headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+              data: opts,
+              url: '/docker/createcontainer'
+            }).done(function( response ) {
+              // Check for a successful (blank) response
+              if (response.msg === '') {
+              }
+              else {
+                alert('Error: ' + response.msg);
+              }
+            });
+          }
+          else {
+              alert('Could Not Create Containers!\nNot enough Host Ports for Project: ' + project.name + '.');
+              return false;
+          }
+          // Update Host Port if not empty
+          (host_port != '') ? host_port += 1 : host_port = '';
+        });
+      });
+    };
+
+    // Redeploy Workspaces
+    function redeployTeam(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Show Modal
+      $('#progressModal').modal({keyboard:true,backdrop:'static'});
+
+      // Retrieve team id from link rel attribute
+      var thisTeamId = $(this).attr('rel');
+
+      // Get Index of object based on id value
+      var arrayPosition = teamListData.map(function(arrayItem) { return arrayItem._id; }).indexOf(thisTeamId);
+
+      // Get our Team Object
+      var thisTeamObject = teamListData[arrayPosition];
+
+      // jQuery AJAX call for JSON
+      $.ajax({
+        type: 'GET',
+        async: false,
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/docker/containers',
+        success: function(data) {
+          $.each(data, function(){
+            // Finds the containers that belong to the project
+            if (this.Names[0].search(thisTeamObject.previous_name.replace(/ /g, '-') + '_') != -1 ) {
+             // Stop the Container
+             $.ajax({
+                type: 'POST',
+                async: false,
+                headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+                url: '/docker/stopcontainer/' + this.Id
+              });
+
+              // Remove the Container
+              $.ajax({
+                type: 'DELETE',
+                async: false,
+                headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+                url: '/docker/removecontainer/' + this.Id
+              });
+            }
+          });
+
+          // Create Docker Containers
+          createContainers(thisTeamObject);
+
+          // Update Teams previous name field
+          $.ajax({
+            type: 'POST',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/teamupdatename/' + thisTeamObject._id
+          });
+        }
+      });
+
+      // Hide Modal
+      $('#progressModal').modal('hide');
+
+      // Update the table
+      populateTable();
+
+    }
 
     // Delete User
     function deleteTeam(event) {

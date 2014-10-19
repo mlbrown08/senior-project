@@ -5,8 +5,11 @@
  */
 
 var passportConf  = require('../config/passport');
+var config        = require('../config/config');
 var Docker        = require('dockerode');
-var docker        = new Docker({ host: '127.0.0.1', port: 4243 }); 
+
+// Docker Connection
+var docker        = new Docker({ host: config.docker.host, port: config.docker.port }); 
 
 /**
  * Docker Controller
@@ -76,8 +79,9 @@ module.exports.controller = function (app) {
   app.post('/docker/createcontainer', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
     // Dictionay for Volumes
     var volumes = {};
+    var mountPoint = '';
     if (req.body.volume !== '') {
-      var mountPoint = req.body.volume.split(':')[1];
+      mountPoint = req.body.volume.split(':')[1];
       volumes[mountPoint] = {};
     }
     else {
@@ -87,8 +91,9 @@ module.exports.controller = function (app) {
 
     // Create container options  
     var createOpts = {
-      Image:req.body.name,
+      Image:req.body.image,
       Cmd:req.body.cmd.split(' '),
+      name:req.body.name,
       Tty:req.body.tty,
       // If tty is true open streams
       AttachStderr:(req.body.tty === 'true') ? true : false,
@@ -96,7 +101,8 @@ module.exports.controller = function (app) {
       AttachStdout:(req.body.tty === 'true') ? true : false,
       OpenStdin:(req.body.tty === 'true') ? true : false,
       StdinOnce:(req.body.tty === 'true') ? true : false,
-      Volumes:volumes
+      Volumes:volumes,
+      WorkingDir:mountPoint
     };
     
     // Dictionary for out Ports
@@ -113,6 +119,27 @@ module.exports.controller = function (app) {
       container.start(startOpts, function (err, data) {
         res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
       });
+    });
+  });
+
+  /**
+   * GET /dockerinspectcontainer/:id
+   * JSON inspect docker container api
+   */
+
+  app.get('/docker/inspectcontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+    // Id of container to be started
+    var id = req.params.id;
+
+    // Get the container
+    var container = docker.getContainer(id);
+    
+    // Inpsect Container
+    container.inspect(function (err, container) {
+      if (err) {
+        return (err, null);
+      }
+      res.json(container);
     });
   });
 

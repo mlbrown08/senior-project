@@ -22,7 +22,7 @@ block content
             legend
               h2
                 i.fa.fa-tasks
-                Docker Container Options
+                | &nbsp; Docker Container Options
           .form-group
             label(for='image') Docker Image:
             select.form-control(name='image', id='image')
@@ -33,8 +33,8 @@ block content
             label(for='containerPort') Container Port:
             input.form-control(type='text', name='containerPort', id='containerPort', placeholder='Ex. - 5000/tcp')
           .form-group
-            label(for='hostPort') Host Port:
-            input.form-control(type='text', name='hostPort', id='hostPort', placeholder='Ex. - 49153')
+            label(for='hostPort') Host Port Range:
+            input.form-control(type='text', name='hostPort', id='hostPort', placeholder='Ex. - 50000:50010')
           .form-group
             button.btn.btn-success(type='submit')
               i.fa.fa-check
