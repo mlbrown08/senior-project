@@ -6,7 +6,7 @@
 
 var Team          = require('../models/Team');
 var User          = require('../models/User');
-var Project          = require('../models/Project');
+var Project       = require('../models/Project');
 var passportConf  = require('../config/passport');
 
 
@@ -192,6 +192,29 @@ module.exports.controller = function (app) {
   });
 
   /**
+   * POST /teamdeploy/:id
+   * JSON Deploy team api
+   */
+
+  app.post('/teamdeploy/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+    Team.update({ _id:req.params.id }, { deployed: true },  function (err, result) {
+      res.send((err === null) ? { msg: '' } : { msg: 'Team error: ' + err });
+    });
+  });
+
+  /**
+   * POST /teamupdatename/:id
+   * JSON update team name api
+   */
+
+  app.post('/teamupdatename/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+    Team.findOne({ _id:req.params.id },  function (err, team) {
+      team.update({ previous_name: team.name },  function (err, result) {
+        res.send((err === null) ? { msg: '' } : { msg: 'Team error: ' + err });
+      });
+    });
+  });
+  /**
    * GET team/create
    * Render Create Team page
    */
@@ -283,6 +306,7 @@ module.exports.controller = function (app) {
       // Create team
       var team = new Team({
         name: req.body.name.trim(),
+        previous_name: req.body.name.trim(),
         users: usersArray,
         projects: projectsArray
       });
@@ -417,6 +441,7 @@ module.exports.controller = function (app) {
 
     workflow.on('updateTeam', function () {
       Team.findById(req.body.teamId, function (err, team) {
+        team.prevous_name = team.name;
         team.name = req.body.name.trim();
       
         // Save team
