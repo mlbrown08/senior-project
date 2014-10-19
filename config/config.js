@@ -52,6 +52,20 @@ config.mongodb        = {};
 config.mongodb.url    = process.env.MONGODB_URL || 'localhost';
 
 /**
+ * Users Data Configuration
+ */
+
+config.userData    = false;  // Set to true to enable user data to be passed to Docker containers
+config.userDataLocation  = 'my/users-data'; // Base directory to store user data
+
+/**
+ * Users Data Configuration
+ */
+config.docker           = {};
+config.docker.host      = '127.0.0.1';
+config.docker.port      = 4243;
+
+/**
  * Session Configuration
  */
 
