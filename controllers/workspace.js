@@ -15,10 +15,21 @@ module.exports.controller = function (app) {
 
  /**
    * GET /workspace*
-   * *ALL* woekspace routes must be authenticated first
+   * *ALL* workspace routes must be authenticated first
    */
 
   app.all('/workspace*', passportConf.isAuthenticated);
+
+  /**
+   * GET /workspaces
+   * Render Workspaces Page
+   */
+
+  app.get('/workspaces', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+    res.render('workspaces/workspaces', {
+      url: req.url
+    });
+  });
 
   /**
    * GET /workspace/readfile
