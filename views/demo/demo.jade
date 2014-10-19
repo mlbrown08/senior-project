@@ -352,7 +352,8 @@ block scripts
     // Create Docker Container
     function createContainer(event) {
       var opts = {
-        name: $('#image').val(),
+        image: $('#image').val(),
+        name: '',
         cmd: $('#cmd').val(),
         tty: $('#tty').val(),
         containerPort: $('#containerPort').val(),
@@ -426,7 +427,7 @@ block scripts
           tableContent += '<td>' + this.Status + '</td>';
           tableContent += '<td>' + this.Names + '</td>';
           tableContent += '<td><a href="#" class="linkstartcontainer btn btn-primary" rel="' + this.Id + '">Start</a></td>';
-          tableContent += '<td><a href="#" class="linkstopcontainer btn btn-danger" rel="' + this.Id + '">Stop</a></td>';
+          tableContent += '<td><a href="#" class="linkstopcontainer btn btn-warning" rel="' + this.Id + '">Stop</a></td>';
           tableContent += '<td><a href="#" class="linkremovecontainer btn btn-danger" rel="' + this.Id + '">Remove</a></td>';
         });
 
