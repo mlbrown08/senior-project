@@ -5,8 +5,11 @@
  */
 
 var passportConf  = require('../config/passport');
+var config        = require('../config/config');
 var Docker        = require('dockerode');
-var docker        = new Docker({ host: '127.0.0.1', port: 4243 }); 
+
+// Docker Connection
+var docker        = new Docker({ host: config.docker.host, port: config.docker.port }); 
 
 /**
  * Docker Controller
@@ -76,8 +79,9 @@ module.exports.controller = function (app) {
   app.post('/docker/createcontainer', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
     // Dictionay for Volumes
     var volumes = {};
+    var mountPoint = '';
     if (req.body.volume !== '') {
-      var mountPoint = req.body.volume.split(':')[1];
+      mountPoint = req.body.volume.split(':')[1];
       volumes[mountPoint] = {};
     }
     else {
