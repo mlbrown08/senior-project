@@ -101,7 +101,6 @@ block content
                 thead
                   th Add?
                   th Name
-                  th Email
                 tbody
           //- /ADDUSER LIST
           .modal-footer
@@ -328,7 +327,6 @@ block scripts
             tableContent += '<tr>';
             tableContent += '<td><div id="users"><input type="checkbox" name="users" value="' + this._id + '"></div></td>';
             tableContent += '<td>' + this.profile.name + '</td>';
-            tableContent += '<td>' + this.email + '</td>';
           }
         });
 
