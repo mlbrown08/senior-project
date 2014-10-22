@@ -5,8 +5,14 @@
  */
 
 var User          = require('../models/User');
+var Project       = require('../models/Project');
 var Team          = require('../models/Team');
 var passportConf  = require('../config/passport');
+var config        = require('../config/config');
+var Docker        = require('dockerode');
+
+// Docker Connection
+var docker        = new Docker({ host: config.docker.host, port: config.docker.port }); 
 
 /**
  * Admin Pages Controller
@@ -20,13 +26,47 @@ module.exports.controller = function (app) {
    */
 
   app.get('/dashboard', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
-    User.count({}, function (err, count) {
+    // Get User Counts
+    User.count({}, function (err, accountCount) {
       if (err) {
         return (err, null);
       }
-      res.render('admin/dashboard', {
-        url: '/administration',  // to set navbar active state
-        accounts: count
+
+      // Get Project Counts
+      Project.count({}, function (err, projectCount) {
+        if (err) {
+          return (err, null);
+        }
+
+        // Get Project Counts
+        Team.count({}, function (err, teamCount) {
+          if (err) {
+            return (err, null);
+          }
+          
+          // Get Workspaces Count
+          docker.listContainers({ all:true }, function (err, containers) {
+            if (err) {
+              return (err, null);
+            }
+            
+            // Get Workspaces Count
+            docker.listImages( function (err, images) {
+              if (err) {
+                return (err, null);
+              }
+
+              res.render('admin/dashboard', {
+                url: '/administration',  // to set navbar active state
+                accounts: accountCount,
+                projects: projectCount,
+                teams: teamCount,
+                workspaces: containers.length,
+                images: images.length
+              });
+            });
+          });
+        });
       });
     });
   });
