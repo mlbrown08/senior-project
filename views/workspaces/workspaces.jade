@@ -32,7 +32,7 @@ block content
       #containerList
       //- /CONTAINER LIST
 
-  #myModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+  #deleteImageModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
       .modal-dialog.modal-sm
         .modal-content
           .modal-header
@@ -40,9 +40,10 @@ block content
             h4#myModalLabel.modal-title Delete confirmation
           .modal-body
             h4 Are you sure?
+            input.form-control(type='hidden', name='imageName', id='imageName', required)
           .modal-footer
             button.btn.btn-default(type='button', data-dismiss='modal') No
-            button#yes.btn.btn-primary(type='button') Yes!
+            button#yesDeleteImage.btn.btn-primary(type='button') Yes!
 
   #createContainerModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
       .modal-dialog.modal-sm
@@ -91,6 +92,7 @@ block content
             h4#myModalLabel.modal-title Stop Container Confirmation
           .modal-body
             h4 Are you sure?
+            input.form-control(type='hidden', name='stopContainerId', id='stopContainerId', required)
           .modal-footer
             button.btn.btn-default(type='button', data-dismiss='modal') No
             button#yesStopContainer.btn.btn-primary(type='button') Yes!
@@ -103,7 +105,7 @@ block content
             h4#myModalLabel.modal-title Remove Container Confirmation
           .modal-body
             h4 Are you sure?
-            a.removeId 
+            input.form-control(type='hidden', name='removeContainerId', id='removeContainerId', required)
           .modal-footer
             button.btn.btn-default(type='button', data-dismiss='modal') No
             button#yesRemoveContainer.btn.btn-primary(type='button') Yes!
@@ -138,13 +140,27 @@ block scripts
       
       // List Images link click
       $('#listImages').on('click', listImages);
-      $('#listWorkspaces').on('click', listWorkspaces);
-      $('#imageList table tbody').on('click', 'td a.linkcreatecontainer', createContainerModal);
-      $('#imageList table tbody').on('click', 'td a.linkdeleteimage', deleteImage);
 
-      // Yes Button to create a container
-      // Moved out of function because keep calling for each click
+      // List Images link click
+      $('#listWorkspaces').on('click', listWorkspaces);
+      
+      // List Images link click
+      $('#imageList table tbody').on('click', 'td a.linkcreatecontainer', showCreateContainerModal);
+
+      // Confirm Create Container link click
       $('#yesCreateContainer').on('click', createContainer);
+
+      // List Delete Image link click
+      $('#imageList table tbody').on('click', 'td a.linkdeleteimage', showDeleteImageModal);
+
+      // Confirm Delete Image link click
+      $('#yesDeleteImage').on('click', deleteImage);
+
+      // Confirm Stop Container link click
+      $('#yesStopContainer').on('click', stopContainer);
+        
+      // Confirm Remove Container link click
+      $('#yesRemoveContainer').on('click', removeContainer);
 
     });
       
@@ -191,59 +207,56 @@ block scripts
     };
 
     // Delete Image
-    function deleteImage(event) {
+    function showDeleteImageModal(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
-        
-      // Pop up a confirmation dialog
-      // Convoluted because we have to
-      // pass the images' name through
-      function showmodal(name) {
-        // show modal
-        $('#myModal').modal({keyboard:true,backdrop:'static'});
-        // if "yes" clicked
-        $('#yes').on('click', function () {
-          // do our delete
-          $.ajax({
-            type: 'DELETE',
-            //- headers: { 'X-CSRF-Token': '#{token}' },
-            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-            data:{name:name},
-            url: '/docker/deleteimage/'
-          }).done(function( response ) {
-            // Check for a successful (blank) response
-            if (response.msg === '') {
-            }
-            else {
-              //alert('Error: ' + response.msg);
-            }
-            // Update the table
-            populateImageTable();
-          });
-          // close the modal
-          $('#myModal').modal('hide');
-        });
-      }
 
-      // call modal function with the image's name
-      showmodal($(this).attr('rel'));
+      // show modal
+      $('#deleteImageModal').modal({keyboard:true,backdrop:'static'});
+
+      // Set Image Name to hidden field
+      // so we pass the Image's Name through
+      $('#imageName').val($(this).attr('rel'));
+
+    };
+
+    function deleteImage (event) {
+      // do our delete
+      $.ajax({
+        type: 'DELETE',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{name:$('#imageName').val()},
+        url: '/docker/deleteimage/'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // Update the table
+        populateImageTable();
+      });
+      // close the modal
+      $('#deleteImageModal').modal('hide');
 
     };
 
     // Shows create Docker Container modal
-    function createContainerModal(event) {
+    function showCreateContainerModal(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
-      
+
       // Prevent Enter Key from Firing
       $('#cmd').keypress(function(event) {
           if(event.which == 13) {
               event.preventDefault();
           }
       });
-      
+
       // Pop up a confirmation dialog
       // Convoluted because we have to
       // pass the images' name through
@@ -287,7 +300,7 @@ block scripts
       });
       // close the modal
       $('#createContainerModal').modal('hide');
-      
+
       // Clear contents of CMD field
       $('#cmd').val('');
       $('#containerPort').val('');
@@ -300,7 +313,7 @@ block scripts
 
       // Prevent Link from Firing
       event.preventDefault();
-      
+
       // List Containers 
       populateContainersTable();
 
@@ -416,11 +429,18 @@ block scripts
 
         // Links for Workspaces Buttons
         $.each(containerTableIds, function(index, value) {
-            $('#' + value + ' tbody').on('click', 'td a.linkstartcontainer', startContainer);
-            $('#' + value + ' tbody').on('click', 'td a.linkstopcontainer', stopContainer);
-            $('#' + value + ' tbody').on('click', 'td a.linkremovecontainer', removeContainer);
-            $('#' + value + ' tbody').on('click', 'td a.linkrecreatecontainer', recreateContainer);
+          // List Start Container link click
+          $('#' + value + ' tbody').on('click', 'td a.linkstartcontainer', startContainer);
+          // List Stop Container link click
+          $('#' + value + ' tbody').on('click', 'td a.linkstopcontainer', showStopContainerModal);
+
+          // List Remove Container link click
+          $('#' + value + ' tbody').on('click', 'td a.linkremovecontainer', showRemoveContainerModal);
+
+          // List Recreate Container link click
+          $('#' + value + ' tbody').on('click', 'td a.linkrecreatecontainer', recreateContainer);
         });
+
       });
     };
 
@@ -430,7 +450,7 @@ block scripts
       // Prevent Link from Firing
       event.preventDefault();
       var id = $(this).attr('rel');
-        
+
       $.ajax({
         type: 'POST',
         //- headers: { 'X-CSRF-Token': '#{token}' },
@@ -450,96 +470,89 @@ block scripts
     };
 
     // Stop Container
-    function stopContainer(event) {
+    function showStopContainerModal(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
-        
-      // Pop up a confirmation dialog
-      // Convoluted because we have to
-      // pass the container's id through
-      function showmodal(id) {
-        // show modal
-        $('#stopContainerModal').modal({keyboard:true,backdrop:'static'});
-        // if "yes" clicked
-        $('#yesStopContainer').on('click', function () {
-          // do our delete
-          $.ajax({
-            type: 'POST',
-            //- headers: { 'X-CSRF-Token': '#{token}' },
-            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-            url: '/docker/stopcontainer/' + id
-          }).done(function( response ) {
-            // Check for a successful (blank) response
-            if (response.msg === '') {
-            }
-            else {
-              //alert('Error: ' + response.msg);
-            }
-            // Update the table
-            populateContainersTable();
-          });
-          // close the modal
-          $('#stopContainerModal').modal('hide');
-        });
-      }
 
-      // call modal function with the container's id
-      showmodal($(this).attr('rel'));
+      // show modal
+      $('#stopContainerModal').modal({keyboard:true,backdrop:'static'});
+
+      // Set Container Id to hidden field
+      // so we pass the Container's Id through
+      $('#stopContainerId').val($(this).attr('rel'));
+
+    };
+
+    function stopContainer (event) {
+      // Stop Container
+      $.ajax({
+        type: 'POST',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/docker/stopcontainer/' + $('#stopContainerId').val()
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // Update the table
+        populateContainersTable();
+      });
+      // close the modal
+      $('#stopContainerModal').modal('hide');
 
     };
 
     // Remove Container
-    function removeContainer(event) {
+    function showRemoveContainerModal(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
-        
-      // Pop up a confirmation dialog
-      // Convoluted because we have to
-      // pass the container's name through
-      function showmodal(id) {
-        // show modal
-        $('#removeContainerModal').modal({keyboard:true,backdrop:'static'});
 
-        // if "yes" clicked
-        $('#yesRemoveContainer').on('click', function () {
-          // do our delete
-          $.ajax({
-            type: 'DELETE',
-            //- headers: { 'X-CSRF-Token': '#{token}' },
-            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-            url: '/docker/removecontainer/' + id
-          }).done(function( response ) {
-            // Check for a successful (blank) response
-            if (response.msg === '') {
-            }
-            else {
-              //alert(response.msg);
-            }
-            // Update the table
-            populateContainersTable();
-          });
-          // close the modal
-          $('#removeContainerModal').modal('hide');
-        });
-      }
-      // call modal function with the container's id
-      showmodal($(this).attr('rel'));
+      // show modal
+      $('#removeContainerModal').modal({keyboard:true,backdrop:'static'});
+
+      // Set Container Id to hidden field
+      // so we pass the Container's Id through
+      $('#removeContainerId').val($(this).attr('rel'));
+
     };
-    
+
+    function removeContainer (event) {
+      // Remove COntainer
+      $.ajax({
+        type: 'DELETE',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/docker/removecontainer/' + $('#removeContainerId').val()
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert(response.msg);
+        }
+        // Update the table
+        populateContainersTable();
+      });
+      // close the modal
+      $('#removeContainerModal').modal('hide');
+    };
+
     // Recreate Workspace
     function recreateContainer(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
 
-      // Retrieve container id from link rel attribute
       var thisContainerId = $(this).attr('rel');
 
       // Get Index of object based on id value
       var arrayPosition = containerListData.map(function(arrayItem) { return arrayItem.Id; }).indexOf(thisContainerId);
-      
+
       // Get our Contianer Object
       var thisContainerObject = containerListData[arrayPosition];
 
@@ -555,7 +568,7 @@ block scripts
           var containerPort = 0;
           var hostPort = 0;
           $.each(thisContainerObject.Ports, function() {
-            containerPort = this.PrivatePort;
+            containerPort = this.PrivatePort + '/' + this.Type;
             hostPort = this.PublicPort;
           });
 
