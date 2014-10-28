@@ -112,6 +112,19 @@ module.exports.controller = function (app) {
   });
 
   /**
+   * GET /accountinfo/:id
+   * JSON account information api
+   */
+
+  app.get('/accountinfo/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+    User.findById(req.params.id, function (err, items) {
+      if (err) {
+        return (err, null);
+      }
+      res.json(items);
+    });
+  });
+  /**
    * DEL /accountlist/:id
    * JSON accounts delete api
    */

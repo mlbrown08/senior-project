@@ -46,8 +46,32 @@ block content
             | &nbsp;#{application} Accounts
         //- Create Account Button
         a.btn.btn-primary(href='/signup', role='button') Create User
-        //- Wrapper
+        //- WRAPPER
         #wrapper
+          br
+          h4
+            i.fa.fa-users
+            | &nbsp;Administrators
+
+          //- ADMIN LIST
+          #adminList
+            table.table.table-striped
+              thead
+                th Name
+                th.hidden-xs Email
+                th.hidden-xs Date Established
+                th Last Active
+                th Update
+                th Delete?
+              tbody
+          //- /ADMIN LIST
+
+        //- WRAPPER
+        
+        #wrapper
+          h4
+            i.fa.fa-users
+            | &nbsp;Users
 
           //- USER LIST
           #userList
@@ -106,9 +130,11 @@ block scripts
       });
 
       // Username link click
+      $('#adminList table tbody').on('click', 'td a.linkshowuser', showUserInfo);
       $('#userList table tbody').on('click', 'td a.linkshowuser', showUserInfo);
 
       // Delete User link click
+      $('#adminList table tbody').on('click', 'td a.linkdeleteuser', showDeleteUserModal);
       $('#userList table tbody').on('click', 'td a.linkdeleteuser', showDeleteUserModal);
       $('#yesDeleteUser').on('click', deleteUser);
 
@@ -120,7 +146,8 @@ block scripts
     function populateTable() {
 
       // Empty content string
-      var tableContent = '';
+      var adminContent = '';
+      var userContent = '';
 
       // jQuery AJAX call for JSON
       $.getJSON( '/accountlist', function( data ) {
@@ -130,17 +157,30 @@ block scripts
 
         // For each item in our JSON, add a table row and cells to the content string
         $.each(data, function(){
-          tableContent += '<tr>';
-          tableContent += '<td><a href="#" class="linkshowuser btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.profile.name + '</td>';
-          tableContent += '<td class="hidden-xs"><a href="mailto:' + this.email + '">' + this.email + '</a></td>';
-          tableContent += '<td class="hidden-xs">' + moment(this.activity.date_established).format('MMMM Do YYYY') + '</td>';
-          tableContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
-          tableContent += '<td><a href="account/userprofile?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
-          tableContent += '<td><a href="#" class="linkdeleteuser btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+          if (this.type == 'admin') {
+            adminContent += '<tr>';
+            adminContent += '<td><a href="#" class="linkshowuser btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.profile.name + '</td>';
+            adminContent += '<td class="hidden-xs"><a href="mailto:' + this.email + '">' + this.email + '</a></td>';
+            adminContent += '<td class="hidden-xs">' + moment(this.activity.date_established).format('MMMM Do YYYY') + '</td>';
+            adminContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+            adminContent += '<td><a href="account/userprofile?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
+            adminContent += '<td><a href="#" class="linkdeleteuser btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+          }
+          else {
+            userContent += '<tr>';
+            userContent += '<td><a href="#" class="linkshowuser btn btn-info btn-xs"" rel="' + this._id + '" title="Show Details">' + this.profile.name + '</td>';
+            userContent += '<td class="hidden-xs"><a href="mailto:' + this.email + '">' + this.email + '</a></td>';
+            userContent += '<td class="hidden-xs">' + moment(this.activity.date_established).format('MMMM Do YYYY') + '</td>';
+            userContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+            userContent += '<td><a href="account/userprofile?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
+            userContent += '<td><a href="#" class="linkdeleteuser btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+          }
+
         });
 
         // Inject the whole content string into our existing HTML table
-        $('#userList table tbody').html(tableContent);
+        $('#adminList table tbody').html(adminContent);
+        $('#userList table tbody').html(userContent);
       });
 
     };
