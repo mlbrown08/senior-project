@@ -99,11 +99,11 @@ module.exports.controller = function (app) {
 
   /**
    * GET /accountlist/:id
-   * JSON specefic account api
+   * JSON accounts on specific proejct api
    */
 
   app.get('/accountlist/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
-    User.findById(req.params.id, function (err, items) {
+    User.find({projects: req.params.id}, function (err, items) {
       if (err) {
         return (err, null);
       }
