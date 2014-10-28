@@ -11,6 +11,9 @@ var should  = require('chai').should();
 var Attempt    = require('../models/LoginAttempt');
 var attempt;
 
+var mongoose = require('mongoose');
+var config = require('../config/config');
+mongoose.connect(config.mongodb.url);
 /**
  * Test User Model
  */

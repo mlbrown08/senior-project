@@ -7,9 +7,13 @@
  * Module Dependencies
  */
 
+var mongoose = require('mongoose');
+var config = require('../config/config');
 var should  = require('chai').should();
 var User    = require('../models/User');
 var user;
+mongoose.connect(config.mongodb.url);
+
 
 /**
  * Test User Model
