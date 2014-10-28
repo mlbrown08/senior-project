@@ -274,7 +274,7 @@ block scripts
       var tableContent = '';
 
       // jQuery AJAX call for JSON
-      $.getJSON( '/accountlist/' + userId , function( data ) {
+      $.getJSON( '/accountinfo/' + userId , function( data ) {
         // Add fields to form
         $('#userId').val(data._id);
         $('#profileImage').attr('src', data.profile.image);

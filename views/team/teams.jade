@@ -64,10 +64,11 @@ block content
             button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
             h4#myModalLabel.modal-title Delete confirmation
           .modal-body
+            input.form-control(type='hidden', name='team_id', id='team_id', required)
             h4 Are you sure?
           .modal-footer
             button.btn.btn-default(type='button', data-dismiss='modal') No
-            button#yes.btn.btn-primary(type='button') Yes!
+            button#yesDeleteTeam.btn.btn-primary(type='button') Yes!
   #progressModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
       .modal-dialog.modal-sm
         .modal-content
@@ -115,8 +116,10 @@ block scripts
       $('#teamList table tbody').on('click', 'td a.linkredeployteam', redeployTeam);
 
       // Delete Team link click
-      $('#teamList table tbody').on('click', 'td a.linkdeleteteam', deleteTeam);
+      $('#teamList table tbody').on('click', 'td a.linkshowdeleteteammodal', showDeleteTeamModal);
 
+      // Confirm Delete Team link click
+      $('#yesDeleteTeam').on('click', deleteTeam);
     });
 
     // Functions =============================================================
@@ -148,7 +151,7 @@ block scripts
             tableContent += '<td><a href="#' + this._id + '" class="linkredeployteam btn btn-warning btn-xs" rel="' + this._id + '">Redeploy!</a></td>';
           }
           tableContent += '<td><a href="team/update?' + this._id + '" class="btn btn-primary btn-xs" rel="' + this._id + '">Update</a></td>';
-          tableContent += '<td><a href="#" class="linkdeleteteam btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
+          tableContent += '<td><a href="#" class="linkshowdeleteteammodal btn btn-danger btn-xs" rel="' + this._id + '">Danger!</a></td>';
         });
 
         // Inject the whole content string into our existing HTML table
@@ -247,7 +250,7 @@ block scripts
         // Check if Project needs to use Ports
         if (project.docker_opts.host_port !== '') {
           hostPort = parseInt(project.docker_opts.host_port.split(':')[0]);
-          mlastHostPort = parseInt(project.docker_opts.host_port.split(':')[1]);
+          lastHostPort = parseInt(project.docker_opts.host_port.split(':')[1]);
 
           // Get host ports
           $.ajax({
@@ -294,12 +297,12 @@ block scripts
             cmd: project.docker_opts.cmd,
             tty: true,
             containerPort: project.docker_opts.container_port,
-            hostPort: host_port,
+            hostPort: hostPort,
             volume: volume
           };
 
           // Only create container if enough host ports
-          if (hostPort <= lasHostPort) {
+          if (hostPort <= lastHostPort) {
             $.ajax({
               type: 'POST',
               async: false,
@@ -320,7 +323,7 @@ block scripts
               return false;
           }
           // Update Host Port if not empty
-          (host_port != '') ? host_port += 1 : host_port = '';
+          (hostPort != '') ? hostPort += 1 : hostPort = '';
         });
       });
     };
@@ -390,44 +393,44 @@ block scripts
       // Update the table
       populateTable();
 
-    }
+    };
 
     // Delete User
-    function deleteTeam(event) {
+    function showDeleteTeamModal(event) {
 
       // Prevent Link from Firing
       event.preventDefault();
 
-      // Pop up a confirmation dialog
-      // Convoluted because we have to
-      // pass the user's id through
-      function showmodal(teamid) {
-        // show modal
-        $('#myModal').modal({keyboard:true,backdrop:'static'});
-        // if "yes" clicked
-        $('#yes').on('click', function () {
-          // do our delete
-          $.ajax({
-            type: 'DELETE',
-            //- headers: { 'X-CSRF-Token': '#{token}' },
-            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-            url: '/teamlist/' + teamid
-          }).done(function( response ) {
-            // Check for a successful (blank) response
-            if (response.msg === '') {
-            }
-            else {
-              alert('Error: ' + response.msg);
-            }
-            // Update the table
-            populateTable();
-          });
-          // close the modal
-          $('#myModal').modal('hide');
-        });
-      }
+       // show modal
+       $('#myModal').modal({keyboard:true,backdrop:'static'});
 
-      // call modal function with the user's account id
-      showmodal($(this).attr('rel'));
+      // Set Team Id to hidden field
+      // so we pass the Team's Id through
+      $('#team_id').val($(this).attr('rel'));
+
+    };
+
+    function deleteTeam(event) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // do our delete
+      $.ajax({
+        type: 'DELETE',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/teamlist/' + $('#team_id').val()
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+        // Update the table
+        populateTable();
+      });
+      // close the modal
+      $('#myModal').modal('hide');
 
     };

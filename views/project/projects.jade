@@ -170,17 +170,15 @@ block scripts
 
       // Populate Users
       var userContent = '<ul>';
-      $.each(thisProjectObject.teams, function(){
-        $.each(this.users, function(){
-          $.ajax({
-            async: false,
-            url: '/accountlist/' + this,
-            dataType: 'json',
-            success: function(data) {
-              userContent += '<li>' + data.profile.name + '</li>';
-            }
+      $.ajax({
+        async: false,
+        url: '/accountlist/' + thisProjectObject._id,
+        dataType: 'json',
+        success: function(data) {
+          $.each(data, function(){
+              userContent += '<li>' + this.profile.name + '</li>';
           });
-        });
+        }
       });
 
       // Inject the whole User content string into our info box

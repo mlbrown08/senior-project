@@ -24,7 +24,7 @@ block content
                   th Add?
                   th Name
                   th Email
-                  th Current Team
+                  th Account Type
                 tbody
             //- /ADD USER LIST
           .form-group#projecs
@@ -90,7 +90,7 @@ block scripts
             userFormContent += '<td><input type="checkbox" name="user" value="' + this._id + '"></td>';
             userFormContent += '<td>' + this.profile.name + '</td>';
             userFormContent += '<td>' + this.email + '</td>';
-            userFormContent += '<td>' + moment(this.activity.last_logon).fromNow() + '</td>';
+            userFormContent += '<td>' + this.type + '</td>';
         });
 
         // Inject the whole content string into our existing HTML table

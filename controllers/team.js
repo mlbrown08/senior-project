@@ -40,7 +40,7 @@ module.exports.controller = function (app) {
    */
 
   app.get('/teamlist', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
-    Team.find({}).populate('users projects').exec( function (err, items) {
+    Team.find({}).populate('users projects').sort({name: 'ascending'}).exec( function (err, items) {
       if (err) {
         return (err, null);
       }
@@ -350,12 +350,23 @@ module.exports.controller = function (app) {
           } 
 
           Team.findOne({ name: req.body.name }, function (err, team) {
-            user.update( { $push: { teams:team._id }, $pushAll: { projects:projects }}, function (err) {
-              if (err) {
-                req.flash('error', { msg: 'Could not add User to Team!' });
-                return res.redirect('back');
-              }
-            });
+            // Add Projects to User unless undefined (there are no Porjects)
+            if (projects !== undefined) { 
+              user.update( { $push: { teams:team._id }, $pushAll: { projects:projects }}, function (err) {
+                if (err) {
+                  req.flash('error', { msg: 'Could not add User to Team!' });
+                  return res.redirect('back');
+                }
+              });
+            }
+            else {
+              user.update( { $push: { teams:team._id }}, function (err) {
+                if (err) {
+                  req.flash('error', { msg: 'Could not add User to Team!' });
+                  return res.redirect('back');
+                }
+              });
+            }
           });
         });
       });
