@@ -276,7 +276,8 @@ app.use(helmet.csp({
     'ws://localhost:3000',
     'ws://127.0.0.1:35729/livereload',
     'wss://skeleton-app.jit.su',
-    'api.github.com'
+    'api.github.com',
+    'ws://mlbrown08.homenet.org:3000'
   ],
   objectSrc: [  // allows control over Flash and other plugins
     "'none'"
