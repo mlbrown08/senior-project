@@ -331,10 +331,14 @@ block scripts
 
         // Stick our user data array into a containerlist variable in the global object
         containerListData = data;
+
         // Sort our Contianers in alphabetical order
-        containerListData.sort(function(obj1, obj2) {
-             return obj1.Names[0].toLowerCase() > obj2.Names[0].toLowerCase() ? 1 : -1;
-        });
+        //containerListData.sort(function(obj1, obj2) {
+             //return obj1.Names[0].toLowerCase() > obj2.Names[0].toLowerCase() ? 1 : -1;
+        //});
+        
+        // - Alternative Design - Quick Sort
+        quicksort(containerListData, 0, containerListData.length - 1);
 
         var team = ' ';
         var project = ' ';
@@ -343,13 +347,13 @@ block scripts
           // For First Team
           if (team == ' ') {
             team = this.Names[0].split('_')[0];
-            tableContent += '<h2>' + team.replace('-',' ').slice(1) + '</h2>';
+            tableContent += '<h2>' + team.replace(/-/g,' ').slice(1) + '</h2>';
           }
 
           // For First Project
           if (project == ' ' ) {
             project = this.Names[0].split('_')[1];
-            tableContent += '<h4 style="margin-left:1em">' + project.replace('-',' ') + '</h4>';
+            tableContent += '<h4 style="margin-left:1em">' + project.replace(/-/g,' ') + '</h4>';
             tableContent += '<table class="table" id ="' + project + '" style="margin-left:2em">';
             tableContent += '<thead>';
             containerTableIds.push(project);
@@ -375,10 +379,10 @@ block scripts
             if (this.Names[0].search(team) == -1 ) {
               team = this.Names[0].split('_')[0];
               tableContent += '<hr>';
-              tableContent += '<h2>' + team.replace('-',' ').slice(1) + '</h2>';
+              tableContent += '<h2>' + team.replace(/-/g,' ').slice(1) + '</h2>';
             }
 
-            tableContent += '<h4 style="margin-left:1em">' + project.replace('-',' ') + '</h4>';
+            tableContent += '<h4 style="margin-left:1em">' + project.replace(/-/g,' ') + '</h4>';
             containerTableIds.push(project);
             tableContent += '<table class="table" id ="' + project + '" style="margin-left:2em">';
             tableContent += '<thead>';
@@ -401,7 +405,7 @@ block scripts
           // See Container has a Users Name
           // If not put "Unknown" for name
           if (this.Names[0].split('_')[2] !== undefined) {
-            tableContent += '<td>' + this.Names[0].split('_')[2].replace('-',' ') + '</td>';
+            tableContent += '<td>' + this.Names[0].split('_')[2].replace(/-/g,' ') + '</td>';
           }
           else {
             tableContent += '<td>Unknown</td>';
@@ -621,4 +625,43 @@ block scripts
       // Update the table
       populateContainersTable();
 
+    };
+
+    // Alternative Design - Implement Quick Sort
+    function quicksort(A, i, k) {
+      if( i < k) {
+        var p = partition(A, i , k);
+        quicksort(A, i, p-1);
+        quicksort(A, p+1, k);
+      }
+    };
+
+    // Partition function for quicksort
+    function partition(array, left, right) {
+      // Select a pivot in the middle of the subarray
+      // Subarray length equals right - left + 1
+      var pivotIndex = left + Math.ceil((right - left) / 2);
+      var pivotValue = array[pivotIndex];
+
+      // Move pivot to to the right
+      array[pivotIndex] = array[right]; 
+      array[right] = pivotValue;
+      var storeIndex = left;
+
+      // Order rest of values
+      for( var i = left; i < right; i++ ){
+        // Move the values less than the pivot to the left
+        if( array[i].Names[0].toLowerCase() < pivotValue.Names[0].toLowerCase() ){
+          var temp = array[i];
+          array[i] = array[storeIndex];
+          array[storeIndex] = temp;
+          storeIndex++;
+        }
+      }
+      // Move pivot to it's final place
+      var temp = array[right];
+      array[right] = array[storeIndex];
+      array[storeIndex] = temp;
+
+      return storeIndex;
     };
