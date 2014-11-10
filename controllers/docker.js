@@ -7,6 +7,8 @@
 var passportConf  = require('../config/passport');
 var config        = require('../config/config');
 var Docker        = require('dockerode');
+var io            = require('socket.io');
+
 
 // Docker Connection
 var docker        = new Docker({ host: config.docker.host, port: config.docker.port }); 
@@ -43,7 +45,7 @@ module.exports.controller = function (app) {
    * JSON containers api
    */
 
-  app.get('/docker/containers', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.get('/docker/containers', passportConf.isAuthenticated, function (req, res) {
     docker.listContainers({ all:true }, function (err, containers) {
       if (err) {
         return (err, null);
@@ -117,7 +119,7 @@ module.exports.controller = function (app) {
 
     docker.createContainer(createOpts, function (err, container) {
       container.start(startOpts, function (err, data) {
-        res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
+        res.send((err === null) ? { msg: '', Id: container.id} : { msg: 'error' + err });
       });
     });
   });
@@ -202,7 +204,7 @@ module.exports.controller = function (app) {
    * JSON restart docker container api
    */
 
-  app.post('/dockerrestartcontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.post('/docker/restartcontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
     // Id of container to be restarted
     var id = req.params.id;
 
@@ -214,4 +216,35 @@ module.exports.controller = function (app) {
       res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
     });
   });
+
+  /**
+   * POST /dockercontainerlogs/:id
+   * Get cotainers logs
+   */
+
+  app.post('/docker/containerlogs', passportConf.isAuthenticated, function (req, res) {
+    // Get reference to Websocket Server
+    var io = req.app.get('io');
+
+    // Id of container
+    var id = req.body.id;
+
+    // Get the container
+    var container = docker.getContainer(id);
+
+    // Log Options
+    var log_opts = {stdin:true, stdout:true, stderr: true, logs: true};
+
+    // Get Logs
+    container.logs(log_opts, function (err, stream) {
+      stream.on('data', function (chunk) {
+        var str = chunk.toString('utf-8');
+ 
+        // Send Data to Websocket Client
+        io.emit('data', { data: str });
+      });
+      res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
+    });
+  });
+
 };
