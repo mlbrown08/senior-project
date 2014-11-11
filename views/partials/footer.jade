@@ -20,7 +20,7 @@ script.
     //- Async load main project js
     $.ajax({
       type: 'GET',
-      url: '/js/Skeleton.min.js',
+      url: '/js/#{application}.min.js',
       dataType: 'script',
       cache: true
     }).done(function () {
@@ -28,6 +28,7 @@ script.
         FastClick.attach(document.body);
       }, false);
     });
+
     //- Async load socket.io
     $.ajax({
       type: 'GET',
