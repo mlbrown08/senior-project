@@ -1,0 +1,109 @@
+extends ../layouts/layout
+
+block head
+  title #{application} &middot; Dashboard
+
+block content
+  .container
+    .row
+      h2
+        i.fa.fa-fw.fa-laptop
+        | &nbsp;Dashboard
+
+      // - HIDDEN FIELDS FOR USER ID AND NAME
+      input(type='hidden', name='userId', id='userId', value = '#{user._id}')
+      input(type='hidden', name='userName', id='userName', value = '#{user.profile.name}')
+      // - /HIDDEN FIELDS
+      
+      //- CONTAINER LIST
+      #containerList
+        table.table.table-striped
+          thead
+            th Team
+            th Project
+            th Image
+            th Command
+            th Port
+            th Connect
+          tbody
+      //- /CONTAINER LIST
+
+//- Page-specific stuff
+block scripts
+  script.
+    // Container list data array for filling in tables
+    var containerListData = [];
+
+    $(document).ready(function() {
+      //- Async Load Bootstrap Modal.js
+      $.ajax({
+        type: 'GET',
+        url: '../lib/bootstrap/js/modal.js',
+        dataType: 'script',
+        cache: true
+      });
+
+      //- Async Load moment.js
+      $.ajax({
+        type: 'GET',
+        url: '../lib/moment/min/moment.min.js',
+        dataType: 'script',
+        cache: true
+      }).done(function(script, textStatus) {
+          // Populate tables
+          populateContainersTable();
+          listFiles();
+      });
+      
+    });
+      
+    // Workspaces Functions =====================================================
+    function listWorkspaces(event) {
+
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // List Containers 
+      populateContainersTable();
+
+    };
+
+    // List Containers
+    function populateContainersTable() {
+
+      // Empty content string
+      var tableContent = '';
+      var containerTableIds = [];
+
+      // jQuery AJAX call for JSON
+      $.getJSON( '/docker/containers', function( data ) {
+
+        // Stick our user data array into a containerlist variable in the global object
+        containerListData = data;
+
+        // For each item in our JSON, add a table row and cells to the content string
+        $.each(containerListData, function(){
+          if(this.Names[0].split('_')[2] == $('#userName').val()) {
+            tableContent += '<tr>';
+            tableContent += '<td>' + this.Names[0].split('_')[0].replace(/-/g, ' ').slice(1) + '</td>';
+            tableContent += '<td>' + this.Names[0].split('_')[1].replace(/-/g, ' ') + '</td>';
+            tableContent += '<td>' + this.Image + '</td>';
+            tableContent += '<td>' + this.Command + '</td>';
+            // Add Ports to table
+            if (this.Ports.length > 0 ) {
+              $.each(this.Ports, function() {
+                tableContent += '<td>' + ((this.PublicPort != 0) ? this.PublicPort : 'None' ) + '</td>';
+              });
+            }
+            else {
+              tableContent += '<td>None</td>';
+            }
+            tableContent += '<td><a href="workspace?' + this.Id + '" class="btn btn-primary btn-xs" rel="' + this.Id + '">Connect</a></td>';
+          }
+        });
+
+        // Inject the whole content string into our existing HTML table
+        $('#containerList table tbody').html(tableContent);
+
+      });
+    };
