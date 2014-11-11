@@ -561,7 +561,7 @@ block scripts
       var thisContainerObject = containerListData[arrayPosition];
 
       // jQuery AJAX call for JSON
-      // Inspects cantainer to be deleted
+      // Inspects container to be deleted
       $.ajax({
         type: 'GET',
         async: false,
@@ -569,12 +569,14 @@ block scripts
         url: '/docker/inspectcontainer/' + thisContainerObject.Id,
         success: function(data) {
           // Get host and container port
-          var containerPort = 0;
-          var hostPort = 0;
-          $.each(thisContainerObject.Ports, function() {
-            containerPort = this.PrivatePort + '/' + this.Type;
-            hostPort = this.PublicPort;
-          });
+          // Get host and container port
+          var containerPort = data.Config.ExposedPorts;
+          var containerPort = Object.keys(containerPort)[0].replace(/"/g, '');
+
+          var hostPortObject = data.HostConfig.PortBindings;
+          for(var key in hostPortObject) {
+            var hostPort = hostPortObject[key][0].HostPort;
+          }
 
           // Get our container options,
           // so we can recreate it

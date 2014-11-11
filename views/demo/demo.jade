@@ -62,8 +62,9 @@ block content
       //- /CONTAINER LIST
     .row
       h2 Running Python Webserver
+      .btn.btn-primary(href='#', role='button', id='startserver' ) Start Server
       pre#editor
-      .btn.btn-primary(href='#', role='button', id='savefile' ) Save
+      .btn.btn-primary(href='#', role='button', id='run' ) Run
 
   #myModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
       .modal-dialog.modal-sm
@@ -225,7 +226,8 @@ block scripts
       // List Images link click
       $('#listImages').on('click', listImages);
       $('#listContainers').on('click', listContainers);
-      $('#savefile').on('click', saveFile);
+      $('#startserver').on('click', startServer);
+      $('#run').on('click', run);
       $('#imageList table tbody').on('click', 'td a.linkcreatecontainer', createContainerModal);
       $('#imageList table tbody').on('click', 'td a.linkdeleteimage', deleteImage);
       $('#containerList table tbody').on('click', 'td a.linkstartcontainer', startContainer);
@@ -556,12 +558,45 @@ block scripts
       });
     }
 
-    function saveFile(event) {
+    // Start Python Server
+    function startServer(event) {
+      alert('test');
+      var opts = {
+        image: 'python:2.7',
+        name: 'python_server',
+        cmd: '/bin/bash /startup.sh',
+        tty: false,
+        containerPort: '5000/tcp',
+        hostPort: '49153',
+        volume: '/home/mls102390/src:/home/workspace'
+      };
+      // do our post
+      $.ajax({
+        type: 'POST',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data: opts,
+        url: '/docker/createcontainer'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          //alert('Error: ' + response.msg);
+        }
+        // Update the table
+        populateContainersTable();
+      });
+    };
+
+    // Runs Code
+    function run(event) {
       // Prevent Link from Firing
       event.preventDefault();
 
       $.ajax({
         type: 'POST',
+        async: false,
         //- headers: { 'X-CSRF-Token': '#{token}' },
         headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
         data:{
@@ -572,5 +607,20 @@ block scripts
       }).done(function( response ) {
         // Update Ace Editor
         loadFile();
+      });
+
+      $.ajax({
+        type: 'POST',
+        async: false,
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/dockerrestartcontainer/python_server'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          //alert('Error: ' + response.msg);
+        }
       });
     }
