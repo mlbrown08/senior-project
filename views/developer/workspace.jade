@@ -35,14 +35,14 @@ block content
           a.menuIcon(href='#' id='run')
             i.fa.fa-fw.fa-play-circle.fa-lg
     .row
-      .col-md-3
+      .col-sm-3
         // - FILES 
         h4
           i.fa.fa-fw.fa-files-o
           | &nbsp;File Explorer
         #fileList.files
 
-      .col-md-9
+      .col-sm-9
         #codeEditor
           // - TEXT EDITOR 
           pre#editor.editor
@@ -187,6 +187,13 @@ block scripts
           id:container, 
         },
         url: '/docker/containerlogs'
+        }).done(function( response ) {
+          // Check for a successful (blank) response
+          if (response.msg === '') {
+          }
+          else {
+            alert('This container no longer exist.\nReconnect through dashboard.');
+          }
       });
     };
 
