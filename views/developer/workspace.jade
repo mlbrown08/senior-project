@@ -1,0 +1,568 @@
+extends ../layouts/layout
+
+block head
+  title #{application} &middot; Workspace
+
+block styles
+  link(rel='stylesheet', href='//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.8/themes/default/style.min.css')
+  link(rel='stylesheet', href='/css/page-dev-workspace.css')
+
+block content
+  .container
+    .row
+      // - MENU BAR
+      ul.nav.nav-pills(role='tablist')
+        li.dropdown(role='presentation')
+          a.dropdown-toggle.menuIcon(data-toggle='dropdown' href='#')
+            i.fa.fa-fw.fa-plus-square-o.fa-lg
+            span.caret
+          ul.dropdown-menu(role='menu')
+            li(role='presentation')
+              a(href='#' id='newfile')
+                i.fa.fa-fw.fa-file-o
+                | &nbsp;File
+            li(role='presentation')
+              a(href='#' id='newfolder')
+                i.fa.fa-fw.fa-folder-o
+                | &nbsp;Folder
+        li(role='presentation')
+          a.menuIcon(href='#' id='save' title='Save All Changes')
+            i.fa.fa-fw.fa-save.fa-lg
+        li(role='presentation')
+          a.menuIcon(href='#' id='delete' title='Delete Selected Item')
+            i.fa.fa-fw.fa-trash-o.fa-lg
+        li(role='presentation' title='Run Application')
+          a.menuIcon(href='#' id='run')
+            i.fa.fa-fw.fa-play-circle.fa-lg
+    .row
+      .col-md-3
+        // - FILES 
+        h4
+          i.fa.fa-fw.fa-files-o
+          | &nbsp;File Explorer
+        #fileList.files
+
+      .col-md-9
+        #codeEditor
+          // - TEXT EDITOR 
+          pre#editor.editor
+
+    .row
+      #output
+        // - OUTPUT
+        h4
+          i.fa.fa-fw.fa-laptop
+          | &nbsp;Output
+        pre#codeOutput.codeOutput
+
+  #newFileModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title New File
+          .modal-body
+            label(for='newFile') Enter name of New File:
+            input.form-control(name='newFile', id='newFile', required)
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesNewFile.btn.btn-primary(type='button') Yes!
+
+  #newFolderModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title New Folder
+          .modal-body
+            label(for='newFile') Enter name of New Folder:
+            input.form-control(name='newFolder', id='newFolder', required)
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesNewFolder.btn.btn-primary(type='button') Yes!
+
+  #deleteFileModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+      .modal-dialog.modal-sm
+        .modal-content
+          .modal-header
+            button.close(type='button', data-dismiss='modal', aria-hidden='true') ×
+            h4#myModalLabel.modal-title Delete confirmation
+          .modal-body
+            h4(id='deleteMessage') Are you sure?
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') No
+            button#yesDeleteFile.btn.btn-primary(type='button') Yes!
+
+//- Page-specific stuff
+block scripts
+  // - Load JSTree.js
+  script(src='//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.8/jstree.min.js', type='text/javascript')
+
+  // - Load Ace Editor.js
+  script(src='../lib/ace/ace.js', type='text/javascript')
+
+  // - Configure Ace Editor.js
+  script.
+    var editor = ace.edit('editor');
+    editor.setTheme('ace/theme/textmate');
+    editor.getSession().setMode('ace/mode/python');
+  
+  script.
+    // Container list data array for filling in tables
+    var container = window.location.href.split('?')[1];
+    var userDirectory = '';
+    var currentFolder = '';
+    var currentFile = '';
+    var lastClickedIteam = '';
+
+    $(document).ready(function() {
+      //- Async Load Bootstrap Modal.js
+      $.ajax({
+        type: 'GET',
+        url: '../lib/bootstrap/js/modal.js',
+        dataType: 'script',
+        cache: true
+      });
+      
+      //- Async load socket.io
+      $.ajax({
+        type: 'GET',
+        url: '//cdn.socket.io/socket.io-1.1.0.js',
+        dataType: 'script',
+        cache: true
+      }).done(function () {
+        $(function(){
+          socket = io(window.location.hostname);
+          socket.on('data', function (data) {
+            var output = $('#codeOutput').html();
+            $('#codeOutput').html(output + data.data);
+          });
+        });
+      });
+      // - Close Socket before loading new page
+      $(window).on('beforeunload', function() {
+        socket.close();
+      });
+
+      //- Async Load moment.js
+      $.ajax({
+        type: 'GET',
+        url: '../lib/moment/min/moment.min.js',
+        dataType: 'script',
+        cache: true
+      }).done(function(script, textStatus) {
+          //setInterval(getContainerLogs, 2000);
+          setTimeout(getContainerLogs, 500);
+          getUserDirectory();
+      });
+      
+      // File link click
+      $('#fileList').on('click', 'ul li a', openFile);
+      // New File Button Clicked
+      $('#newfile').on('click', newFileModal);
+      // Confirm New File
+      $('#yesNewFile').on('click', newFile);
+      // New Folder Button Clicked
+      $('#newfolder').on('click', newFolderModal);
+      // Confirm New Folder
+      $('#yesNewFolder').on('click', newFolder);
+      // Save Button Clicked
+      $('#save').on('click', save);
+      // Delete Button Clicked
+      $('#delete').on('click', deleteFileModal);
+      // Confirm New File
+      $('#yesDeleteFile').on('click', deleteFile);
+      // Run Button Clicked
+      $('#run').on('click', run);
+    });
+      
+    // Workspaces Functions =====================================================
+    function getContainerLogs() {
+      $('#codeOutput').html('');
+      $.ajax({
+        type: 'POST',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{
+          id:container, 
+        },
+        url: '/docker/containerlogs'
+      });
+    };
+
+    function getUserDirectory() {
+      $.ajax({
+        type: 'GET',
+        aync: false,
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/docker/inspectcontainer/' + container,
+        success: function(data) {
+          userDirectory = JSON.stringify(data.Volumes).slice(1, -1).replace(/"/g,'').split(':')[1];
+          currentFolder = userDirectory;
+        }
+      }).done(function( response ) {
+        // Update File Tree
+        createJSTrees();
+      });
+    }
+
+    function createJSTrees() {
+      if( userDirectory == '' ) {
+          getUserDirectory();
+      }
+
+      $('#fileList').jstree({
+        core: {
+          check_callback: true,
+          data: {
+            type: 'POST',
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/workspace/listfiles',
+            data: function(node) {
+              return { id: node.id, userDir:userDirectory };
+            }
+          }
+        },
+        plugins: [ 'wholerow' ] 
+      });
+
+    }
+
+    function loadFile() {
+    }
+
+    function saveFile(event) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      $.ajax({
+        type: 'POST',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{
+          file:currentFile, 
+          text:editor.getValue()
+        },
+        url: '/workspace/savefile'
+      }).done(function( response ) {
+        // Update Ace Editor
+        loadFile();
+      });
+    };
+
+    function openFile(event) {
+      // Prevent Link from Firing
+      event.preventDefault();
+      var itemClicked = this;
+      var file = this.id.substring(0, this.id.length - 7);
+      $.ajax({
+        type: 'POST',
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data: {file: file},
+        url: '/workspace/readfile'
+      }).done(function( response ) {
+        // Update Ace Editor
+        if (response.msg === '') {
+          editor.setValue(response.data, 1);
+        }
+        // Update Current File or Directory
+        if($(itemClicked).parent()[0].outerHTML.search('isleaf="true"') !== -1) {
+          currentFile = file;
+          lastClickedIteam = 'file';
+
+          var files = file.split('/');
+          currentFolder = file;
+          currentFolder = file.slice(0, currentFolder.length - files[files.length - 1 ].length - 1);
+        }
+        else {
+          currentFolder = file;
+          lastClickedIteam = 'dir'
+        }
+        console.log(currentFolder);
+      });
+    };
+
+    // Runs Code
+    function run(event) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      $.ajax({
+        type: 'POST',
+        async: false,
+        //- headers: { 'X-CSRF-Token': '#{token}' },
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data:{
+          file:currentFile, 
+          text:editor.getValue()
+        },
+        url: '/workspace/savefile'
+      }).done(function( response ) {
+        // Update Ace Editor
+        loadFile();
+      });
+
+      // jQuery AJAX call for JSON
+      // Inspects container to be deleted
+      $.ajax({
+        type: 'GET',
+        async: false,
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        url: '/docker/inspectcontainer/' + container,
+        success: function(data) {
+          // Get host and container port
+          var containerPort = data.Config.ExposedPorts;
+          var containerPort = Object.keys(containerPort)[0].replace(/"/g, '');
+
+          var hostPortObject = data.HostConfig.PortBindings;
+          for(var key in hostPortObject) {
+            var hostPort = hostPortObject[key][0].HostPort;
+          }
+          
+          // Get Container Volume
+          var temp = JSON.stringify(data.Volumes).slice(1, -1).replace(/"/g,'').split(':');
+          var temp1 = temp[1]
+          var volume = temp1.toString() + ':' + temp[0].toString();
+
+          // Get our container options,
+          // so we can recreate it
+          var opts = {
+            image: data.Image,
+            name: data.Name,
+            cmd: data.Config.Cmd.toString().replace(/,/g, ' '),
+            tty: true,
+            containerPort: containerPort,
+            hostPort: hostPort,
+            volume: volume
+          };
+
+         // Stop the Container
+         $.ajax({
+            type: 'POST',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/docker/stopcontainer/' + data.Id
+          });
+  
+          // Remove the Container
+          $.ajax({
+            type: 'DELETE',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            url: '/docker/removecontainer/' + data.Id
+          });
+  
+          // Create Docker Container
+          $.ajax({
+            type: 'POST',
+            async: false,
+            headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+            data: opts,
+            url: '/docker/createcontainer'
+          }).done(function( response ) {
+            // Check for a successful (blank) response
+            if (response.msg === '') {
+              //Update Container Name
+              container = response.Id;
+
+              setTimeout(getContainerLogs, 500);
+            }
+            else {
+              alert('Error: ' + response.msg);
+            }
+          });
+        }
+      });
+
+    };
+
+    function newFileModal( event ) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // show modal
+      $('#newFileModal').modal({keyboard:true,backdrop:'static'});
+
+    };
+
+    function newFile( event ) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      var file = $('#newFile').val();
+
+      // Create new File
+      $.ajax({
+        type: 'POST',
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data: { file: currentFolder + '/' + file },
+        url: '/workspace/createfile'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+          createFileNode(currentFolder + '/' + file, false);
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+      });
+
+      // close the modal
+      $('#newFileModal').modal('hide');
+    };
+
+    function newFolderModal( event ) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // show modal
+      $('#newFolderModal').modal({keyboard:true,backdrop:'static'});
+
+    };
+
+    function newFolder( event ) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      var folder = $('#newFolder').val();
+      // Create new File
+      $.ajax({
+        type: 'POST',
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data: { file: currentFolder + '/' + folder },
+        url: '/workspace/createfolder'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+          createFileNode(currentFolder + '/' + folder, true);
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+      });
+
+      // close the modal
+      $('#newFolderModal').modal('hide');
+    };
+    
+    function save( event ) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      alert('Save');
+    };
+    
+    function deleteFileModal( event ) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // show modal
+      $('#deleteFileModal').modal({keyboard:true,backdrop:'static'});
+
+      // Build Message String
+      if(lastClickedIteam === 'file') {
+        var files = currentFile.split('/');
+        $('#deleteMessage').html('Are you sure you want to delete file ' + files[files.length -1] + '?');
+      }
+      else {
+        var files = currentFolder.split('/');
+        $('#deleteMessage').html('Are you sure you want to delete folder ' + files[files.length -1] + '?');
+      }
+
+    };
+
+    function deleteFile( event ) {
+      // Prevent Link from Firing
+      event.preventDefault();
+
+      // Delete File/Folder
+      if(lastClickedIteam === 'file') {
+        // Delete File
+        $.ajax({
+          type: 'POST',
+          headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+          data: { file: currentFile },
+          url: '/workspace/deletefile'
+        }).done(function( response ) {
+          // Check for a successful (blank) response
+          if (response.msg === '') {
+            deleteFileNode();
+          }
+          else {
+            alert('Error: ' + response.msg);
+          }
+        });
+      }
+      else {
+        // Delete File
+        $.ajax({
+          type: 'POST',
+          headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+          data: { file: currentFolder },
+          url: '/workspace/deletefolder'
+        }).done(function( response ) {
+          // Check for a successful (blank) response
+          if (response.msg === '') {
+            deleteFileNode();
+          }
+          else {
+            alert('Error: ' + response.msg);
+          }
+        });
+      }
+
+      // close the modal
+      $('#deleteFileModal').modal('hide');
+    };
+
+    function createFileNode(path, isDirectory) {
+      var files = path.split('/');
+      var text = files[ files.length - 1 ];
+      var file = {
+        id: path,
+        text: text,
+        icon: isDirectory ? 'fa fa-folder' : 'fa fa-file-o',
+        state: {
+          opened: false,
+          disabled: false,
+          selected: false
+        },
+        li_attr: {
+          base: path,
+          isLeaf: !isDirectory
+        },
+        children: isDirectory
+      };
+      
+      // Get reference to node
+      var ref = $('#fileList').jstree(true);
+
+      var sel = ref.get_selected();
+      if(!sel.length) {
+        sel = userDirectory;
+      }
+      else  if(sel[0] === currentFile) {
+        var item = sel[0].split('/');
+        sel = sel[0].slice(0, sel.length - item[item.length -1].length - 2);
+      }
+      else {
+        sel = sel[0];
+      }
+      sel = ref.create_node(sel, file);
+      if(sel) {
+        ref.edit(sel);
+      }
+    };
+
+    function deleteFileNode() {
+      var ref = $('#fileList').jstree(true);
+      var sel = ref.get_selected();
+      
+      if(!sel.length) {
+        sel = userDirectory;
+      }
+      
+      ref.delete_node(sel);
+    };

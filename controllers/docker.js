@@ -7,6 +7,8 @@
 var passportConf  = require('../config/passport');
 var config        = require('../config/config');
 var Docker        = require('dockerode');
+var io            = require('socket.io');
+
 
 // Docker Connection
 var docker        = new Docker({ host: config.docker.host, port: config.docker.port }); 
@@ -29,7 +31,7 @@ module.exports.controller = function (app) {
    * JSON images api
    */
 
-  app.get('/docker/images', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.get('/docker/images', passportConf.isAuthenticated, function (req, res) {
     docker.listImages(function (err, images) {
       if (err) {
         return (err, null);
@@ -43,7 +45,7 @@ module.exports.controller = function (app) {
    * JSON containers api
    */
 
-  app.get('/docker/containers', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.get('/docker/containers', passportConf.isAuthenticated, function (req, res) {
     docker.listContainers({ all:true }, function (err, containers) {
       if (err) {
         return (err, null);
@@ -57,7 +59,7 @@ module.exports.controller = function (app) {
    * JSON docker image delete api
    */
 
-  app.delete('/docker/deleteimage', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.delete('/docker/deleteimage', passportConf.isAuthenticated, function (req, res) {
     // Name of image to be removed
     var name = req.body.name;
 
@@ -76,7 +78,7 @@ module.exports.controller = function (app) {
    * JSON startcontainer api
    */
 
-  app.post('/docker/createcontainer', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.post('/docker/createcontainer', passportConf.isAuthenticated, function (req, res) {
     // Dictionay for Volumes
     var volumes = {};
     var mountPoint = '';
@@ -117,7 +119,7 @@ module.exports.controller = function (app) {
 
     docker.createContainer(createOpts, function (err, container) {
       container.start(startOpts, function (err, data) {
-        res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
+        res.send((err === null) ? { msg: '', Id: container.id} : { msg: 'error' + err });
       });
     });
   });
@@ -127,7 +129,7 @@ module.exports.controller = function (app) {
    * JSON inspect docker container api
    */
 
-  app.get('/docker/inspectcontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.get('/docker/inspectcontainer/:id', passportConf.isAuthenticated, function (req, res) {
     // Id of container to be started
     var id = req.params.id;
 
@@ -137,6 +139,7 @@ module.exports.controller = function (app) {
     // Inpsect Container
     container.inspect(function (err, container) {
       if (err) {
+        concole.log('error');
         return (err, null);
       }
       res.json(container);
@@ -148,7 +151,7 @@ module.exports.controller = function (app) {
    * JSON start docker container api
    */
 
-  app.post('/docker/startcontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.post('/docker/startcontainer/:id', passportConf.isAuthenticated, function (req, res) {
     // Id of container to be started
     var id = req.params.id;
 
@@ -166,7 +169,7 @@ module.exports.controller = function (app) {
    * JSON stop docker container api
    */
 
-  app.post('/docker/stopcontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.post('/docker/stopcontainer/:id', passportConf.isAuthenticated, function (req, res) {
     // Id of container to be stopped
     var id = req.params.id;
 
@@ -184,7 +187,7 @@ module.exports.controller = function (app) {
    * JSON remove docker container api
    */
 
-  app.delete('/docker/removecontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.delete('/docker/removecontainer/:id', passportConf.isAuthenticated, function (req, res) {
     // Id of container to be restarted
     var id = req.params.id;
 
@@ -202,7 +205,7 @@ module.exports.controller = function (app) {
    * JSON restart docker container api
    */
 
-  app.post('/dockerrestartcontainer/:id', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.post('/docker/restartcontainer/:id', passportConf.isAuthenticated, function (req, res) {
     // Id of container to be restarted
     var id = req.params.id;
 
@@ -214,4 +217,35 @@ module.exports.controller = function (app) {
       res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
     });
   });
+
+  /**
+   * POST /dockercontainerlogs/:id
+   * Get cotainers logs
+   */
+
+  app.post('/docker/containerlogs', passportConf.isAuthenticated, function (req, res) {
+    // Get reference to Websocket Server
+    var io = req.app.get('io');
+
+    // Id of container
+    var id = req.body.id;
+
+    // Get the container
+    var container = docker.getContainer(id);
+
+    // Log Options
+    var log_opts = { stdin:true, stdout:true, stderr: true, logs: true };
+
+    // Get Logs
+    container.logs(log_opts, function (err, stream) {
+      stream.on('data', function (chunk) {
+        var str = chunk.toString('utf-8');
+ 
+        // Send Data to Websocket Client
+        io.emit('data', { data: str });
+      });
+      res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
+    });
+  });
+
 };

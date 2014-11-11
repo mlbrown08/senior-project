@@ -219,6 +219,9 @@ block scripts
 
       // Get our Team Object
       var thisTeamObject = teamListData[arrayPosition];
+ 
+      // Create User Directory
+      // function call
 
       // Create Containers
       createContainers(thisTeamObject);
@@ -283,9 +286,11 @@ block scripts
           // Check for User data
           var volume = '';
           if ($('#fileLocation').length) {
-            volume = $('#fileLocation').val() + ':/workspace';
+            //Create User Directory
+            var userPath = user.profile.name + '/' + team.name + '/' + project.name;
+            createUserDirectory(userPath);
+            volume = $('#fileLocation').val() + userPath + ':/home/workspace';
           }
-
 
           // Create Docker Container
           var opts = {
@@ -327,6 +332,24 @@ block scripts
         });
       });
     };
+
+    // Create User Directory
+    function createUserDirectory(path) {
+     $.ajax({
+        type: 'POST',
+        async: false,
+        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
+        data: { path:path },
+        url: '/workspace/createuserdir'
+      }).done(function( response ) {
+        // Check for a successful (blank) response
+        if (response.msg === '') {
+        }
+        else {
+          alert('Error: ' + response.msg);
+        }
+      });
+    }
 
     // Redeploy Workspaces
     function redeployTeam(event) {

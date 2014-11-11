@@ -16,6 +16,7 @@ script window.jQuery || document.write('<script src="/lib/jquery/dist/jquery.min
 //- Then use jQuery to async load everything else
 script.
   $(document).ready(function() {
+    var socket;
     //- Async load main project js
     $.ajax({
       type: 'GET',
@@ -27,6 +28,7 @@ script.
         FastClick.attach(document.body);
       }, false);
     });
+
     //- Async load socket.io
     $.ajax({
       type: 'GET',
@@ -35,7 +37,7 @@ script.
       cache: true
     }).done(function () {
       $(function(){
-        var socket = io(window.location.hostname);
+        socket = io(window.location.hostname);
         socket.on('connect', function () {
           socket.emit('pageview', window.location.href);
         });
@@ -43,5 +45,9 @@ script.
           socket.emit('pageview', window.location.href);
         };
       });
+    });
+    // - Close Socket before loading new page
+    $(window).on('beforeunload', function() {
+        socket.close();
     });
   });

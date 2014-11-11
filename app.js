@@ -243,7 +243,8 @@ app.use(helmet.csp({
     "'self'",
     "'unsafe-inline'",
     'fonts.googleapis.com',
-    'checkout.stripe.com'
+    'checkout.stripe.com',
+    'cdnjs.cloudflare.com'
   ],
   fontSrc: [
     "'self'",
@@ -265,7 +266,8 @@ app.use(helmet.csp({
     'fbcdn-profile-a.akamaihd.net',
     'github.global.ssl.fastly.net',
     'chart.googleapis.com',
-    'www.google-analytics.com'
+    'www.google-analytics.com',
+    'cdnjs.cloudflare.com'
   ],
   mediaSrc: [
     "'self'"
@@ -276,7 +278,8 @@ app.use(helmet.csp({
     'ws://localhost:3000',
     'ws://127.0.0.1:35729/livereload',
     'wss://skeleton-app.jit.su',
-    'api.github.com'
+    'api.github.com',
+    'ws://mlbrown08.homenet.org:3000'
   ],
   objectSrc: [  // allows control over Flash and other plugins
     "'none'"
@@ -477,6 +480,8 @@ db.on('open', function () {
 
 var connectedCount = 0;
 
+app.set('io', io);
+
 io.on('connection', function (socket) {
   connectedCount += 1;
   // Listen for pageview messages from clients
@@ -496,6 +501,13 @@ io.on('connection', function (socket) {
     connectedCount -= 1;
     io.emit('dashUpdate', {
       connections: connectedCount
+    });
+  });
+  // Update dashboard connections on disconnect events
+  socket.on('logs', function (data) {
+    console.log('Test');
+    io.emit('data', {
+      data:data
     });
   });
 });

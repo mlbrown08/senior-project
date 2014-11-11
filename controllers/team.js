@@ -280,7 +280,7 @@ module.exports.controller = function (app) {
       // if more then 1 is checked
       var usersArray = [];
       if (userCount === 0) {
-        usersArray.push(null);
+        // do nothing
       }
       else if (userCount === 24) { // Remember this is really one user
         usersArray.push(req.body.user);
@@ -293,8 +293,8 @@ module.exports.controller = function (app) {
       // Have to process the users differently 
       // if more then 1 is checked
       var projectsArray = [];
-      if (userCount === 0) {
-        usersArray.push(null);
+      if (projectCount === 0) {
+        // do nothing
       }
       else if (projectCount === 24) { // Remeber this is really on user
         projectsArray.push(req.body.project);
@@ -302,7 +302,7 @@ module.exports.controller = function (app) {
       else {
         projectsArray = req.body.project;
       }
-      
+
       // Create team
       var team = new Team({
         name: req.body.name.trim(),
