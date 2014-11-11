@@ -139,7 +139,6 @@ module.exports.controller = function (app) {
     // Inpsect Container
     container.inspect(function (err, container) {
       if (err) {
-        concole.log('error');
         return (err, null);
       }
       res.json(container);

@@ -36,7 +36,7 @@ module.exports.controller = function (app) {
 
   app.get('/developer/dashboard', passportConf.isAuthenticated, function (req, res) {
     res.render('developer/dashboard', {
-      url: req.url
+      url: '/dashboard'
     });
   });
 
