@@ -234,15 +234,18 @@ module.exports.controller = function (app) {
 
     // Log Options
     var log_opts = { stdin:true, stdout:true, stderr: true, logs: true };
-
     // Get Logs
     container.logs(log_opts, function (err, stream) {
-      stream.on('data', function (chunk) {
-        var str = chunk.toString('utf-8');
- 
-        // Send Data to Websocket Client
-        io.emit('data', { data: str });
-      });
+      // Stream Log if no errors
+      if( err === null ) {
+        stream.on('data', function (chunk) {
+          var str = chunk.toString('utf-8');
+
+          // Send Data to Websocket Client
+          io.emit('data', { data: str });
+        });
+      }
+
       res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
     });
   });
