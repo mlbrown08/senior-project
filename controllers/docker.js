@@ -233,7 +233,7 @@ module.exports.controller = function (app) {
     var container = docker.getContainer(id);
 
     // Log Options
-    var log_opts = { stdin:true, stdout:true, stderr: true, logs: true };
+    var log_opts = { stdin:true, stdout:true, stderr: true, logs: true, follow:true };
     // Get Logs
     container.logs(log_opts, function (err, stream) {
       // Stream Log if no errors

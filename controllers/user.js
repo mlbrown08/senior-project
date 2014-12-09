@@ -349,7 +349,7 @@ module.exports.controller = function (app) {
    * Render signup page
    */
 
-  app.get('/signup', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
+  app.get('/signup', function (req, res) {
     res.render('account/signup', {
       url: req.url
     });

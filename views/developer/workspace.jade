@@ -167,7 +167,7 @@ block scripts
       // Confirm New Folder
       $('#yesNewFolder').on('click', newFolder);
       // Save Button Clicked
-      $('#save').on('click', save);
+      $('#save').on('click', saveFile);
       // Delete Button Clicked
       $('#delete').on('click', deleteFileModal);
       // Confirm New File
@@ -236,15 +236,13 @@ block scripts
 
     }
 
-    function loadFile() {
-    }
-
     function saveFile(event) {
       // Prevent Link from Firing
       event.preventDefault();
 
       $.ajax({
         type: 'POST',
+        async: false,
         //- headers: { 'X-CSRF-Token': '#{token}' },
         headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
         data:{
@@ -252,15 +250,16 @@ block scripts
           text:editor.getValue()
         },
         url: '/workspace/savefile'
-      }).done(function( response ) {
-        // Update Ace Editor
-        loadFile();
       });
     };
 
     function openFile(event) {
       // Prevent Link from Firing
       event.preventDefault();
+
+      // Save File
+      saveFile(event);
+
       var itemClicked = this;
       var file = this.id.substring(0, this.id.length - 7);
       $.ajax({
@@ -275,7 +274,7 @@ block scripts
           editor.setValue(response.data, 1);
         }
         // Update Current File or Directory
-        if($(itemClicked).parent()[0].outerHTML.search('isleaf="true"') !== -1) {
+        if($(itemClicked).children()[0].outerHTML.search('fa fa-file-o') !== -1) {
           currentFile = file;
           lastClickedIteam = 'file';
 
@@ -287,7 +286,6 @@ block scripts
           currentFolder = file;
           lastClickedIteam = 'dir'
         }
-        console.log(currentFolder);
       });
     };
 
@@ -296,20 +294,8 @@ block scripts
       // Prevent Link from Firing
       event.preventDefault();
 
-      $.ajax({
-        type: 'POST',
-        async: false,
-        //- headers: { 'X-CSRF-Token': '#{token}' },
-        headers: { 'X-CSRF-Token': $('meta[name="x-csrf-token"]').attr('content')},
-        data:{
-          file:currentFile, 
-          text:editor.getValue()
-        },
-        url: '/workspace/savefile'
-      }).done(function( response ) {
-        // Update Ace Editor
-        loadFile();
-      });
+      // Save File
+      saveFile(event);
 
       // jQuery AJAX call for JSON
       // Inspects container to be deleted
@@ -321,11 +307,17 @@ block scripts
         success: function(data) {
           // Get host and container port
           var containerPort = data.Config.ExposedPorts;
-          var containerPort = Object.keys(containerPort)[0].replace(/"/g, '');
+          if (containerPort !== null) {
+            var containerPort = Object.keys(containerPort)[0].replace(/"/g, '');
 
-          var hostPortObject = data.HostConfig.PortBindings;
-          for(var key in hostPortObject) {
-            var hostPort = hostPortObject[key][0].HostPort;
+            var hostPortObject = data.HostConfig.PortBindings;
+            for(var key in hostPortObject) {
+              var hostPort = hostPortObject[key][0].HostPort;
+            }
+          }
+          else {
+              containerPort = '';
+              hostPort = '';
           }
           
           // Get Container Volume
@@ -416,6 +408,9 @@ block scripts
         }
       });
 
+      // Clear input box 
+      $('#newFile').val('');
+
       // close the modal
       $('#newFileModal').modal('hide');
     };
@@ -449,6 +444,9 @@ block scripts
           alert('Error: ' + response.msg);
         }
       });
+
+      // Clear input box 
+      $('#newFolder').val('');
 
       // close the modal
       $('#newFolderModal').modal('hide');
