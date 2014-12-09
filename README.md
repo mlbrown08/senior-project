@@ -5,13 +5,13 @@
 [![DevDependency status][dev-dep-badge]][dev-dep-url]
 [![Licensing][license-badge]][license-url]
 
-[build-badge]: https://img.shields.io/travis/dstroot/skeleton.svg?style=flat
-[build-url]: https://travis-ci.org/dstroot/skeleton
+[build-badge]: https://img.shields.io/travis/mlbrown08/senior-project.svg?style=flat
+[build-url]: https://travis-ci.org/mlbrown08/senior-project
 
-[dependency-badge]: https://img.shields.io/david/dstroot/skeleton.svg?style=flat
+[dependency-badge]: https://img.shields.io/david/mlbrown08/senior-project.svg?style=flat
 [dependency-url]: https://david-dm.org/mlbrown08/senior-project
 
-[dev-dep-badge]: https://img.shields.io/david/dev/dstroot/skeleton.svg?style=flat
+[dev-dep-badge]: https://img.shields.io/david/dev/mlbrown08/senior-project.svg?style=flat
 [dev-dep-url]: https://david-dm.org/mlbrown08/senior-project#info=devDependencies
 
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
