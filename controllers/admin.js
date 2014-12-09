@@ -57,7 +57,7 @@ module.exports.controller = function (app) {
               }
 
               res.render('admin/dashboard', {
-                url: '/administration',  // to set navbar active state
+                url: '/dashboard',  // to set navbar active state
                 accounts: accountCount,
                 projects: projectCount,
                 teams: teamCount,
@@ -78,8 +78,8 @@ module.exports.controller = function (app) {
 
   app.get('/accounts', passportConf.isAuthenticated, passportConf.isAdministrator, function (req, res) {
     res.render('admin/accounts', {
-      url: '/administration', // to set navbar active state
-      token: res.locals.token
+      token: res.locals.token,
+      url: req.url
     });
   });
 

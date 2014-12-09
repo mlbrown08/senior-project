@@ -13,42 +13,17 @@ nav.navbar.navbar-default.navbar-fixed-top(role='navigation')
       if user
         ul.nav.navbar-nav
           if user.type == 'user'
-            li
+            li(class=url=='/dashboard'?'active':undefined)
               a(href='/developer/dashboard')
                 i.fa.fa-fw.fa-laptop
                 | &nbsp;Dashboard
           //- Visible to Admin users only!
           if user.type == 'admin'
-            li
-              a(href='/demo')
-                i.fa.fa-fw.fa-laptop
-                | &nbsp;Demo
-            li
-              a(href='/accounts')
-                i.fa.fa-fw.fa-users
-                | &nbsp;Accounts
-            li
-              a(href='/projects')
-                i.fa.fa-fw.fa-laptop
-                | &nbsp;Projects
-            li
-              a(href='/teams')
-                i.fa.fa-fw.fa-users
-                | &nbsp;Teams
-            li
-              a(href='/workspaces')
-                i.fa.fa-fw.fa-laptop
-                | &nbsp;Workspaces
-
-        //- Right side
-        ul.nav.navbar-nav.navbar-right
-
-          //- Visible to Admin users only!
-          if user.type == 'admin'
-            li.dropdown(class=url=='/administration'?'active':undefined)
+            // - Will be hidden on small devices
+            li.hidden-sm.dropdown(class=url=='/dashboard'?'active':undefined)
               a.dropdown-toggle(href='#', data-toggle='dropdown')
                 i.fa.fa-fw.fa-cogs
-                | &nbsp;Admin&nbsp;
+                | &nbsp;Dashboards&nbsp;
                 b.caret
               ul.dropdown-menu
                 li
@@ -60,10 +35,64 @@ nav.navbar.navbar-default.navbar-fixed-top(role='navigation')
                     i.fa.fa-fw.fa-laptop
                     | &nbsp;Dev Dashboard
                 li
-                  a(href='/colors')
-                    i.fa.fa-fw.fa-cog
-                    | &nbsp;Color Scheme
+                  a(href='/demo')
+                    i.fa.fa-fw.fa-laptop
+                    | &nbsp;Demo
+            li.hidden-sm(class=url=='/accounts'?'active':undefined)
+              a(href='/accounts')
+                i.fa.fa-fw.fa-users
+                | &nbsp;Accounts
+            li.hidden-sm(class=url=='/projects'?'active':undefined)
+              a(href='/projects')
+                i.fa.fa-fw.fa-laptop
+                | &nbsp;Projects
+            li.hidden-sm(class=url=='/teams'?'active':undefined)
+              a(href='/teams')
+                i.fa.fa-fw.fa-users
+                | &nbsp;Teams
+            li.hidden-sm(class=url=='/workspaces'?'active':undefined)
+              a(href='/workspaces')
+                i.fa.fa-fw.fa-laptop
+                | &nbsp;Workspaces
 
+            // - Admin Menu on small devices
+            li.visible-sm.dropdown
+              a.dropdown-toggle(href='#', data-toggle='dropdown')
+                i.fa.fa-fw.fa-cogs
+                | &nbsp;Admin&nbsp;
+                b.caret
+              ul.dropdown-menu
+                li
+                  a(href='/dashboard')
+                    i.fa.fa-fw.fa-laptop
+                    | &nbsp;Dashboard
+                li
+                  a(href='developer/dashboard')
+                    i.fa.fa-fw.fa-laptop
+                    | &nbsp;Dev Dashboard
+                  a(href='/demo')
+                    i.fa.fa-fw.fa-laptop
+                    | &nbsp;Demo
+                li
+                li(class=url=='/accounts'?'active':undefined)
+                  a(href='/accounts')
+                    i.fa.fa-fw.fa-users
+                    | &nbsp;Accounts
+                li
+                  a(href='/projects')
+                    i.fa.fa-fw.fa-laptop
+                    | &nbsp;Projects
+                li
+                  a(href='/teams')
+                    i.fa.fa-fw.fa-users
+                    | &nbsp;Teams
+                li
+                  a(href='/workspaces')
+                    i.fa.fa-fw.fa-laptop
+                    | &nbsp;Workspaces
+        
+        //- Right side
+        ul.nav.navbar-nav.navbar-right
           //- User account
           li.dropdown(class=url=='/account'?'active':undefined)
             a.dropdown-toggle(href='#', data-toggle='dropdown')

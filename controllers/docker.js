@@ -139,7 +139,6 @@ module.exports.controller = function (app) {
     // Inpsect Container
     container.inspect(function (err, container) {
       if (err) {
-        concole.log('error');
         return (err, null);
       }
       res.json(container);
@@ -234,16 +233,19 @@ module.exports.controller = function (app) {
     var container = docker.getContainer(id);
 
     // Log Options
-    var log_opts = { stdin:true, stdout:true, stderr: true, logs: true };
-
+    var log_opts = { stdin:true, stdout:true, stderr: true, logs: true, follow:true };
     // Get Logs
     container.logs(log_opts, function (err, stream) {
-      stream.on('data', function (chunk) {
-        var str = chunk.toString('utf-8');
- 
-        // Send Data to Websocket Client
-        io.emit('data', { data: str });
-      });
+      // Stream Log if no errors
+      if( err === null ) {
+        stream.on('data', function (chunk) {
+          var str = chunk.toString('utf-8');
+
+          // Send Data to Websocket Client
+          io.emit('data', { data: str });
+        });
+      }
+
       res.send((err === null) ? { msg: '' } : { msg: 'error' + err });
     });
   });
