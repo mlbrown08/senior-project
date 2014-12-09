@@ -1,4 +1,4 @@
-# Skeleton 
+# Senior Project 
 
 [![Build status][build-badge]][build-url]
 [![Dependency status][dependency-badge]][dependency-url]
@@ -11,48 +11,20 @@
 [build-url]: https://travis-ci.org/dstroot/skeleton
 
 [dependency-badge]: https://img.shields.io/david/dstroot/skeleton.svg?style=flat
-[dependency-url]: https://david-dm.org/dstroot/skeleton
+[dependency-url]: https://david-dm.org/mlbrown08/senior-project
 
 [dev-dep-badge]: https://img.shields.io/david/dev/dstroot/skeleton.svg?style=flat
-[dev-dep-url]: https://david-dm.org/dstroot/skeleton#info=devDependencies
+[dev-dep-url]: https://david-dm.org/mlbrown08/senior-project#info=devDependencies
 
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: #license
 
-[release-badge]: https://img.shields.io/github/release/dstroot/skeleton.svg?style=flat
-[release-url]: https://github.com/dstroot/skeleton/releases
+#### Senior Project: A Collaborative Online Development Enviorment.
 
-[issues-badge]: https://img.shields.io/github/issues/dstroot/skeleton.svg?style=flat
-[issues-url]: https://github.com/dstroot/skeleton/issues
+The system is a cloud-based platform for developers. There are two main components of the system, the administrative and the developer component. The administrative component allows administrators to manage their developers, projects, and teams. The developers are divided into teams and the projects are assigned to the teams. Then the administrator can deploy the developers' workspaces, which are Docker Containers. The administrator will have full control over each container, with the ability to start, stop, remove, and recreate it. The Developer component will allow developers to write, run, and test their code via the web. The developers will interact with their containers through the systems user interface.
 
-#### Skeleton: A **complete framework** for building **Node.js** web applications.
+**Note**: Used [Skeleton](https://github.com/dstroot/skeleton) as a jumping of point for this project.
 
-#### **Live Demo**: [Skeleton](http://skeleton-app.jit.su) 
-
-![Alt](https://raw.github.com/dstroot/skeleton/master/public/img/home.jpg)
-
-There are many excellent Node/Express/Mongo frameworks out there. I have played with many, and contributed to a few of them. Since there is really no one "right" way to do things you kind of have to explore.  Once I did that I found that none of them were "just right" as Goldilocks would say. So I built this one! 
-
-I borrowed heavily from [Hackathon-starter](https://github.com/sahat/hackathon-starter) and [Drywall](https://github.com/jedireza/drywall). The reason is third party OAUTH authentication is painful. [Passportjs](http://passportjs.org/) helps tremendously but there are not many good examples of how to use it. Both of these frameworks really show how it's done. Both are actively maintained and are really great starting points. I recommend either of them **highly**. 
-
-Of the two, Drywall is more sophisticated. It has an extensive User/Account/Roles system to handle different types of accounts and account permissions.  It also has a very cool Administration area. In addition, the client side uses Backbone.  This framework allows for unique scripts and css on a per page basis - nice! Overall this framework has some GREAT stuff in it.  It's just maybe a little too big/rich if you just want to start building a simple site.
-
-This brings us to Hackathon-starter. This is GREAT site to get started with and has many outstanding API integrations as well as the authentication all built out. It really lives up to it's billing.  It was easier to build up from here rather than take stuff out of Drywall.
-
-#### Other frameworks to check out:
-
-- [Dozer](http://dozerjs.com/)
-- [Locomotive](http://locomotivejs.org/)
-- [Flatiron](http://flatironjs.org/)
-- API Only: [Restify](http://mcavage.me/node-restify/)
-
-So why offer "yet another framework"?  First, I like a fully working built-out site as a starting point to "see" a framework in action. Also because I want a playground of my own **and** you might find something interesting in here!
-
-#### Find this helpful?
-
-This could literally save hundreds of hours of work.  If it you find it valuable I would appreciate your support!
-
-[Support via GITTIP](https://www.gittip.com/danstroot/)
 
 Table of Contents
 -----------------
@@ -64,18 +36,13 @@ Table of Contents
 - [Obtaining API Keys](#obtaining-api-keys)
 - [FAQ](#faq)
 - [Pro Tips](#pro-tips)
-- [Useful Tools](#useful-tools)
-- [Interesting Design](#interesting-design)
-- [Interesting Node.js Libraries](#interesting-nodejs-libraries)
-- [Interesting Client-Side Libraries](#interesting-client-side-libraries)
 - [Deployment](#deployment)
 - [TODO](#todo)
 - [Contributing](#contributing)
 - [License](#license)
 
 Features
---------
-
+--
 - **Modern Technology Stack**
   + Node.js
   + Node.js clusters support
@@ -477,55 +444,6 @@ Pro Tips
 - Use [async.parallel()](https://github.com/caolan/async#parallel) when you neeed to run multiple asynchronous tasks, and then render a page, but only when all tasks are completed. For example, you might want to scrape 3 different websites for some data (async operation) and render the results on a page after all 3 websites have been scraped.
 - Use [async.waterfall()](https://github.com/caolan/async#waterfall) when you need to run sequential tasks before you render a page.
 - Need to find a specific object inside an Array? Use [_.findWhere](http://underscorejs.org/#findWhere) function from Underscore.js. For example, this is how you would retrieve a Twitter token from database: `var token = _.findWhere(req.user.tokens, { kind: 'twitter' });`, where `req.user.tokens` is an Array, and a second parameter is an object with a given key/value.
-
-Useful Tools
-------------
-- [Jade Syntax Documentation by Example](http://naltatis.github.io/jade-syntax-docs/#attributes) - Even better than official Jade docs.
-- [HTML to Jade converter](http://html2jade.aaron-powell.com) - Extremely valuable when you need to quickly copy and paste HTML snippets from the web.
-- [JavascriptOO](http://www.javascriptoo.com/) - A directory of JavaScript libraries with examples, CDN links, statistics, and videos.
-- [DailyJS](http://dailyjs.com/) - Blog about JS coding, libraries and tools.
-
-Interesting Design
-------------------
-- [Bootstrap](http://getbootstrap.com/) - Start here.  ;)
-- [Bootstrap Expo](http://expo.getbootstrap.com/) - Examples of Bootstrap based sites.
-- [Wrap Bootstrap](https://wrapbootstrap.com/) - Bootstrap themes and templates
-- [Bootswatch](http://bootswatch.com/) - Bootstrame themes (simple stuff)
-- [Google Bootstrap](http://todc.github.io/todc-bootstrap/) - Google-styled theme for Bootstrap.
-- [Font Awesome Icons](http://fortawesome.github.io/Font-Awesome/icons/) - It's already part of the Hackathon Starter, so use this page as a reference.
-- [Colors](http://clrs.cc) - a nicer color palette for the web.
-- [CSS Spinning Loaders](http://codepen.io/andymcfee/pen/ioskA) - spinning loader in CSS.
-- [SpinKit](http://tobiasahlin.com/spinkit/) - 8 awesome looking spinning loaders in CSS.
-- [Creative Button Styles](http://tympanus.net/Development/CreativeButtons/) - awesome button styles.
-- [3D Dropdown Menu](http://soulwire.github.io/Makisu/) - CSS3 3D Dropdown Menu that folds and unfolds.
-- [Creative Link Effects](http://tympanus.net/Development/CreativeLinkEffects/) - Beautiful link effects in CSS.
-- [Medium Scroll Effect](http://codepen.io/andreasstorm/pen/pyjEh) - Fade in/out header background image as you scroll.
-- [HTML5UP](http://html5up.net/) - Beautifully designed HTML templates.
-- [Codrops](http://tympanus.net/codrops/) - Excellent design tutorials!
-
-Interesting Node.js Libraries
------------------------------
-
-- [geoip-lite](https://github.com/bluesmoon/node-geoip) - get geolocation coordinates from IP address.
-- [filesize.js](http://filesizejs.com/) - make file size pretty, e.g. `filesize(265318); // "265.32 kB"`.
-- [Numeral.js](http://numeraljs.com) - a javascript library for formatting and manipulating numbers.
-
-Interesting Client-Side libraries
----------------------------------
-- [Hover](https://github.com/IanLunn/Hover) - Awesome css3 animations on mouse hover.
-- [retina.js](http://retinajs.com/) - Retina.js checks each image on the page to see if there is a high-resolution version. If a high-resolution variant exists, the script will swap in that image in-place.
-- [platform.js](https://github.com/bestiejs/platform.js) - Get client's operating system name, version, and other useful information.
-- [iCheck](https://github.com/fronteed/iCheck) - Custom nice looking radio and check boxes.
-- [Magnific Popup](http://dimsemenov.com/plugins/magnific-popup/) - Responsive jQuery Lightbox Plugin.
-- [jQuery Raty](http://wbotelhos.com/raty/) - Star Rating Plugin.
-- [Headroom.js](http://wicky.nillia.ms/headroom.js/) - Hide your header until you need it.
-- [Fotorama](http://fotorama.io) - Very nice jQuery gallery.
-- [X-editable](http://vitalets.github.io/x-editable/) - Edit form elements inline.
-- [Offline.js](http://github.hubspot.com/offline/docs/welcome/) - Detect when user's internet connection goes offline.
-- [Color Thief](https://github.com/lokesh/color-thief) - Grabs the dominant color or a representative color palette from an image.
-- [select.js](http://github.hubspot.com/select/docs/welcome/) - Styleable select elements.
-- [drop.js](http://github.hubspot.com/drop/docs/welcome/) -  Powerful Javascript and CSS library for creating dropdowns and other floating displays.
-- [scrollReveal.js](https://github.com/julianlloyd/scrollReveal.js) - Declarative on-scroll reveal animations.
 
 Deployment
 ----------
